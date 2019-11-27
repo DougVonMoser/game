@@ -22,10 +22,12 @@ config :code_names, CodeNamesWeb.Endpoint,
   check_origin: false,
   watchers: [
     node: [
-      "node_modules/webpack/bin/webpack.js",
-      "--mode",
-      "development",
-      "--watch-stdin",
+      "node_modules/.bin/webpack-dev-server",
+      "--hot",
+      "--colors",
+      "--stdin",
+      "--port",
+      "3000",
       cd: Path.expand("../assets", __DIR__)
     ]
   ]
@@ -55,15 +57,13 @@ config :code_names, CodeNamesWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :code_names, CodeNamesWeb.Endpoint,
-  live_reload: [
-    patterns: [
-      ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
-      ~r"priv/gettext/.*(po)$",
-      ~r"lib/code_names_web/{live,views}/.*(ex)$",
-      ~r"lib/code_names_web/templates/.*(eex)$"
-    ]
-  ]
+# config :code_names, CodeNamesWeb.Endpoint,
+#   live_reload: [
+#     patterns: [
+#       ~r"lib/code_names_web/{live,views}/.*(ex)$",
+#       ~r"lib/code_names_web/templates/.*(eex)$"
+#     ]
+#   ]
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
