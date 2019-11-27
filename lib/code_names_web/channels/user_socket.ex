@@ -2,7 +2,7 @@ defmodule CodeNamesWeb.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", CodeNamesWeb.RoomChannel
+  channel "room:*", CodeNamesWeb.RoomChannel
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After

@@ -2,6 +2,8 @@
 
 require("./styles.scss");
 
+import socket from "./socket"
+
 const {Elm} = require('./Main');
 var app = Elm.Main.init({flags: 6});
 
