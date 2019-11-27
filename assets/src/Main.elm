@@ -1,4 +1,4 @@
-port module Main exposing (Model, Msg(..), add1, init, main, toJs, update, view)
+module Main exposing (Model, Msg(..), add1, init, main, update, view)
 
 import Browser
 import Html exposing (..)
@@ -6,15 +6,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Http exposing (Error(..))
 import Json.Decode as Decode
-
-
-
--- ---------------------------
--- PORTS
--- ---------------------------
-
-
-port toJs : String -> Cmd msg
+import Websocket exposing (Event(..))
 
 
 
@@ -26,12 +18,19 @@ port toJs : String -> Cmd msg
 type alias Model =
     { counter : Int
     , serverMessage : String
+    , socketInfo : SocketStatus
     }
+
+
+type SocketStatus
+    = Unopened
+    | Connected Websocket.ConnectionInfo
+    | Closed Int
 
 
 init : Int -> ( Model, Cmd Msg )
 init flags =
-    ( { counter = flags, serverMessage = "" }, Cmd.none )
+    ( { counter = flags, serverMessage = "", socketInfo = Unopened }, Cmd.none )
 
 
 
@@ -51,10 +50,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
         Inc ->
-            ( add1 model, toJs "Hello Js" )
+            ( add1 model, Cmd.none )
 
         Set m ->
-            ( { model | counter = m }, toJs "Hello Js" )
+            ( { model | counter = m }, Cmd.none )
 
         TestServer ->
             let
