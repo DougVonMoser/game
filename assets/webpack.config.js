@@ -22,7 +22,7 @@ var common = {
     output: {
         path: path.resolve(__dirname, '../priv/static/js'),
         //path: path.join(__dirname, "dist"),
-        publicPath: "/",
+        publicPath: MODE == "production" ? "/" : "http://localhost:3000/",
         // FIXME webpack -p automatically adds hash when building for production
         //filename: MODE == "production" ? "[name]-[hash].js" : "index.js"
         filename: 'app.js'
@@ -115,12 +115,8 @@ if (MODE === "development") {
             stats: "errors-only",
             contentBase: path.join(__dirname, "src/assets"),
             historyApiFallback: true,
-            // feel free to delete this section if you don't need anything like this
-            before(app) {
-                // on port 3000
-                app.get("/test", function(req, res) {
-                    res.json({ result: "OK" });
-                });
+            headers: {
+                'Access-Control-Allow-Origin': '*'
             }
         }
     });

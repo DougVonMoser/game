@@ -2,7 +2,7 @@ defmodule CodeNamesWeb.PageController do
   use CodeNamesWeb, :controller
 
   def test(conn, _) do
-    json(conn, %{result: "gucci"})
+    json(conn, %{result: "friggin yayyyyyyyyyy"})
   end
 
   def index(conn, _params) do
