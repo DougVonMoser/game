@@ -11,10 +11,6 @@ type Card
     | Turned Word TurnedOverBy OriginallyColored Hash
 
 
-
---unique identifier
-
-
 type Hash
     = Hash Int
 
