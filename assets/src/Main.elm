@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import Card exposing (..)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -32,41 +33,6 @@ type SocketStatus
     | Closed Int
 
 
-
--- Card should be monoidal for the comprehensive game
--- who flipped, originalColor, unique Identifier yada yada
-
-
-type Card
-    = UnTurned Word OriginallyColored Hash
-    | Turned Word TurnedOverBy OriginallyColored Hash
-
-
-
---unique identifier
-
-
-type Hash
-    = Hash Int
-
-
-type OriginallyColored
-    = OriginallyColored Team
-
-
-type TurnedOverBy
-    = TurnedOverBy Team
-
-
-type Word
-    = Word String
-
-
-type Team
-    = Red
-    | Blue
-
-
 init : Int -> ( Model, Cmd Msg )
 init flags =
     ( { counter = flags
@@ -76,14 +42,6 @@ init flags =
       }
     , Cmd.none
     )
-
-
-initialCards =
-    List.repeat 25 ()
-        |> List.indexedMap
-            (\x _ ->
-                UnTurned (Word "testing") (OriginallyColored Blue) (Hash x)
-            )
 
 
 
@@ -117,15 +75,6 @@ handleClickUpdate clickedHash model =
                 model.cards
     in
     ( { model | cards = updatedCards, serverMessage = "something got clicked" }, Cmd.none )
-
-
-turnOverCard turningOverTeam card =
-    case card of
-        UnTurned word originallyColored hash ->
-            Turned word (TurnedOverBy turningOverTeam) originallyColored hash
-
-        Turned _ _ _ _ ->
-            Debug.todo "OH MY GOD"
 
 
 cardMatchesHash : Card -> Hash -> Bool
@@ -191,6 +140,9 @@ getTeamColor team =
 
         Blue ->
             rgb255 0 0 255
+
+        NoTeam ->
+            rgb255 60 60 60
 
 
 
