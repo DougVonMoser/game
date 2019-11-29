@@ -1,0 +1,40 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+BadMessage	src/Websocket.elm	/^    | BadMessage String$/;"	t
+Closed	src/Main.elm	/^    | Closed Int$/;"	t
+Closed	src/Websocket.elm	/^    | Closed ConnectionInfo Int$/;"	t
+Connected	src/Main.elm	/^    | Connected Websocket.ConnectionInfo$/;"	t
+Connected	src/Websocket.elm	/^    = Connected ConnectionInfo$/;"	t
+ConnectionInfo	src/Websocket.elm	/^type alias ConnectionInfo =$/;"	a
+Error	src/Websocket.elm	/^    | Error ConnectionInfo Int$/;"	t
+Event	src/Websocket.elm	/^type Event$/;"	t
+Inc	src/Main.elm	/^    = Inc$/;"	t
+Main	src/Main.elm	/^module Main exposing (Model, Msg(..), add1, init, main, update, view)$/;"	m
+Model	src/Main.elm	/^type alias Model =$/;"	a
+Msg	src/Main.elm	/^type Msg$/;"	t
+OnServerResponse	src/Main.elm	/^    | OnServerResponse (Result Http.Error String)$/;"	t
+Set	src/Main.elm	/^    | Set Int$/;"	t
+SocketStatus	src/Main.elm	/^type SocketStatus$/;"	t
+StringMessage	src/Websocket.elm	/^    | StringMessage ConnectionInfo String$/;"	t
+TestServer	src/Main.elm	/^    | TestServer$/;"	t
+Unopened	src/Main.elm	/^    = Unopened$/;"	t
+Websocket	src/Websocket.elm	/^port module Websocket exposing (ConnectionInfo, Event(..), connect, events, sendString)$/;"	m
+add1	src/Main.elm	/^add1 : Model -> Model$/;"	f
+app	src/index.js	/^var app = Elm.Main.init({flags: 6});$/;"	v
+connect	src/Websocket.elm	/^connect : String -> List String -> Cmd msg$/;"	f
+connectionDecoder	src/Websocket.elm	/^connectionDecoder : Decoder ConnectionInfo$/;"	c
+eventDecoder	src/Websocket.elm	/^eventDecoder : Decoder Event$/;"	c
+events	src/Websocket.elm	/^events : (Event -> msg) -> Sub msg$/;"	f
+fromSocket	src/Websocket.elm	/^port fromSocket : (Value -> a) -> Sub a$/;"	p
+httpErrorToString	src/Main.elm	/^httpErrorToString : Http.Error -> String$/;"	f
+init	src/Main.elm	/^init : Int -> ( Model, Cmd Msg )$/;"	f
+main	src/Main.elm	/^main : Program Int Model Msg$/;"	c
+message	src/Websocket.elm	/^message : String -> Value -> Value$/;"	f
+sendString	src/Websocket.elm	/^sendString : ConnectionInfo -> String -> Cmd msg$/;"	f
+toSocket	src/Websocket.elm	/^port toSocket : Value -> Cmd msg$/;"	p
+update	src/Main.elm	/^update : Msg -> Model -> ( Model, Cmd Msg )$/;"	f
+view	src/Main.elm	/^view : Model -> Html Msg$/;"	f
