@@ -77,16 +77,6 @@ handleClickUpdate clickedHash model =
     ( { model | cards = updatedCards, serverMessage = "something got clicked" }, Cmd.none )
 
 
-cardMatchesHash : Card -> Hash -> Bool
-cardMatchesHash card (Hash hash) =
-    case card of
-        UnTurned _ _ (Hash hash2) ->
-            hash == hash2
-
-        Turned _ _ _ (Hash hash2) ->
-            hash == hash2
-
-
 
 -- ---------------------------
 -- VIEW
@@ -97,11 +87,10 @@ view : Model -> Html Msg
 view model =
     Element.layout [] <|
         column [ width (px 1000), spacing 80, centerX, centerY ] <|
-            [ el [] (text model.serverMessage)
-            , cardsView model.cards
-            ]
+            [ cardsView model.cards ]
 
 
+cardsView : List Card -> Element Msg
 cardsView cards =
     wrappedRow [ spacing 80 ] <| List.map cardView cards
 
@@ -133,18 +122,6 @@ cardView card =
                 none
 
 
-getTeamColor team =
-    case team of
-        Red ->
-            rgb255 255 0 0
-
-        Blue ->
-            rgb255 0 0 255
-
-        NoTeam ->
-            rgb255 60 60 60
-
-
 
 -- ---------------------------
 -- MAIN
@@ -158,7 +135,7 @@ main =
         , update = update
         , view =
             \m ->
-                { title = "Codenames!"
+                { title = "Codenames Scoreboard"
                 , body = [ view m ]
                 }
         , subscriptions = \_ -> Sub.none

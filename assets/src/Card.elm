@@ -19,6 +19,20 @@ type Hash
     = Hash Int
 
 
+hashesAreEqual (Hash hash1) (Hash hash2) =
+    hash1 == hash2
+
+
+cardMatchesHash : Card -> Hash -> Bool
+cardMatchesHash card hash1 =
+    case card of
+        UnTurned _ _ hash2 ->
+            hashesAreEqual hash1 hash2
+
+        Turned _ _ _ hash2 ->
+            hashesAreEqual hash1 hash2
+
+
 type OriginallyColored
     = OriginallyColored Team
 
