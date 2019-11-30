@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (..)
 
 import Browser
 import Card exposing (..)
@@ -9,8 +9,8 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Html exposing (Html)
 import Http exposing (Error(..))
-import Json.Decode as Decode
-import Websocket exposing (Event(..))
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
 
 
 
@@ -22,26 +22,24 @@ import Websocket exposing (Event(..))
 type alias Model =
     { counter : Int
     , serverMessage : String
-    , socketInfo : SocketStatus
     , cards : List Card
     }
-
-
-type SocketStatus
-    = Unopened
-    | Connected Websocket.ConnectionInfo
-    | Closed Int
 
 
 init : Int -> ( Model, Cmd Msg )
 init flags =
     ( { counter = flags
       , serverMessage = "nothing clicked yet"
-      , socketInfo = Unopened
       , cards = initialCards
       }
-    , Cmd.none
+    , toSocket <| Encode.string "connect"
     )
+
+
+port toSocket : Encode.Value -> Cmd msg
+
+
+port fromSocket : (String -> msg) -> Sub msg
 
 
 
@@ -52,6 +50,7 @@ init flags =
 
 type Msg
     = Clicked Hash
+    | Hey String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -59,6 +58,9 @@ update message model =
     case message of
         Clicked hash ->
             handleClickUpdate hash model
+
+        Hey _ ->
+            ( model, Cmd.none )
 
 
 handleClickUpdate clickedHash model =
@@ -138,5 +140,5 @@ main =
                 { title = "Codenames Scoreboard"
                 , body = [ view m ]
                 }
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = \_ -> fromSocket Hey
         }
