@@ -39,7 +39,7 @@ init flags =
 port toSocket : Encode.Value -> Cmd msg
 
 
-port fromSocket : (String -> msg) -> Sub msg
+port fromSocket : (Decode.Value -> msg) -> Sub msg
 
 
 
@@ -50,7 +50,7 @@ port fromSocket : (String -> msg) -> Sub msg
 
 type Msg
     = Clicked Hash
-    | Hey String
+    | Hey Decode.Value
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -59,8 +59,13 @@ update message model =
         Clicked hash ->
             handleClickUpdate hash model
 
-        Hey _ ->
-            ( model, Cmd.none )
+        Hey x ->
+            case Decode.decodeValue cardsDecoder x of
+                Ok decoded_thing ->
+                    ( { model | cards = decoded_thing }, Cmd.none )
+
+                Err e ->
+                    ( model, Cmd.none )
 
 
 handleClickUpdate clickedHash model =

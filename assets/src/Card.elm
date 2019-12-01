@@ -4,6 +4,8 @@ module Card exposing (..)
 -- who flipped, originalColor, unique Identifier yada yada
 
 import Element exposing (..)
+import Json.Decode as D exposing (Decoder, at, string)
+import Json.Encode as E exposing (Value)
 
 
 type Card
@@ -11,8 +13,47 @@ type Card
     | Turned Word TurnedOverBy OriginallyColored Hash
 
 
+cardsDecoder =
+    D.list cardDecoder
+
+
+cardDecoder =
+    D.map3 funky
+        (at [ "hash" ] string)
+        (at [ "original_color" ] teamDecoder)
+        (at [ "word" ] string)
+
+
+funky : String -> Team -> String -> Card
+funky hash original_color word =
+    UnTurned (Word word) (OriginallyColored original_color) (Hash hash)
+
+
+teamDecoder =
+    D.string
+        |> D.andThen
+            (\color ->
+                case color of
+                    "red" ->
+                        D.succeed Red
+
+                    "blue" ->
+                        D.succeed Blue
+
+                    "gray" ->
+                        D.succeed NoTeam
+
+                    x ->
+                        D.fail <| "unrecognized color of " ++ x
+            )
+
+
+
+-- {hash: "8ae375dd-d3b0-4b44-bee2-023cb7baa517", original_color: "gray", word: "voluptate"}
+
+
 type Hash
-    = Hash Int
+    = Hash String
 
 
 hashesAreEqual (Hash hash1) (Hash hash2) =
@@ -74,7 +115,7 @@ initialCards =
     , UnTurned (Word "testing") (OriginallyColored NoTeam)
     , UnTurned (Word "testing") (OriginallyColored NoTeam)
     ]
-        |> List.indexedMap (\x y -> y (Hash x))
+        |> List.indexedMap (\_ y -> y (Hash "darn"))
 
 
 turnOverCard turningOverTeam card =
