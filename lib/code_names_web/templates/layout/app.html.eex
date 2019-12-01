@@ -12,6 +12,5 @@
       <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
       <%= render @view_module, @view_template, assigns %>
     </main>
-  <script type="text/javascript" src="http://localhost:3000/app.js"></script>
   </body>
 </html>

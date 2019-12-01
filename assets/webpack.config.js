@@ -18,14 +18,14 @@ console.log('\x1b[36m%s\x1b[0m', `** elm-webpack-starter: mode "${MODE}", withDe
 
 var common = {
     mode: MODE,
-    entry: "./src/index.js",
+    entry: { app :"./src/index.js", admin : "./src/admin.js"},
     output: {
         path: path.resolve(__dirname, '../priv/static/js'),
         //path: path.join(__dirname, "dist"),
         publicPath: MODE == "production" ? "/" : "http://localhost:3000/",
         // FIXME webpack -p automatically adds hash when building for production
         //filename: MODE == "production" ? "[name]-[hash].js" : "index.js"
-        filename: 'app.js'
+        filename: '[name].js'
     },
     plugins: [
         new HTMLWebpackPlugin({
