@@ -9,8 +9,8 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
 export default socket
 
 
-const {Elm} = require('./Main');
-var app = Elm.Main.init({flags: 6});
+const {Elm} = require('./Admin.elm');
+var app = Elm.Admin.init({flags: 6});
 
 
 app.ports.toSocket.subscribe(message => {
