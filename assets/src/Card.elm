@@ -56,6 +56,10 @@ type Hash
     = Hash String
 
 
+encodeHash (Hash x) =
+    E.string x
+
+
 hashesAreEqual (Hash hash1) (Hash hash2) =
     hash1 == hash2
 

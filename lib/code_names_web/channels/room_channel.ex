@@ -11,4 +11,9 @@ defmodule CodeNamesWeb.RoomChannel do
     broadcast!(socket, "new:msg", %{user: msg["user"], body: msg["body"]})
     {:reply, :ok}
   end
+
+  def handle_in("clicked", msg, socket) do
+    broadcast!(socket, "updateFromServer", %{cards: @example_cards})
+    {:noreply, socket}
+  end
 end

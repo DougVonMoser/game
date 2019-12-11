@@ -81,7 +81,9 @@ handleClickUpdate clickedHash model =
                 )
                 model.cards
     in
-    ( { model | cards = updatedCards, serverMessage = "something got clicked" }, Cmd.none )
+    ( { model | cards = updatedCards, serverMessage = "something got clicked" }
+    , toSocket (encodeHash clickedHash)
+    )
 
 
 

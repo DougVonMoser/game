@@ -12,12 +12,13 @@ export default socket
 const {Elm} = require('./Main');
 var app = Elm.Main.init({flags: 6});
 
+let channel;
 
 app.ports.toSocket.subscribe(message => {
     if (message == "connect") {
         socket.connect()
 
-        let channel = socket.channel("room:lobby", {})
+        channel = socket.channel("room:lobby", {})
         channel.join()
           .receive("ok", resp => {
                 console.log("got from server")
@@ -28,8 +29,14 @@ app.ports.toSocket.subscribe(message => {
 
         channel.on("updateFromServer", msg => {
             console.log("got from server")
-            console.log(msg)
+            console.log(msg.cards)
+            app.ports.fromSocket.send(msg.cards)
         })
 
+    } else {
+        // assume its a clicked card for now :)
+        channel.push("clicked", {body: message})
+        
     }
+    
 })
