@@ -18,15 +18,33 @@ cardsDecoder =
 
 
 cardDecoder =
-    D.map3 funky
-        (at [ "hash" ] string)
-        (at [ "original_color" ] teamDecoder)
-        (at [ "word" ] string)
+    at [ "turned_over_by" ] (D.nullable string)
+        |> D.andThen
+            (\maybeRedBlue ->
+                case maybeRedBlue of
+                    Just redBlueString ->
+                        D.map4 funky4
+                            (at [ "hash" ] string)
+                            (at [ "turned_over_by" ] teamDecoder)
+                            (at [ "original_color" ] teamDecoder)
+                            (at [ "word" ] string)
+
+                    Nothing ->
+                        D.map3 funky
+                            (at [ "hash" ] string)
+                            (at [ "original_color" ] teamDecoder)
+                            (at [ "word" ] string)
+            )
 
 
 funky : String -> Team -> String -> Card
 funky hash original_color word =
     UnTurned (Word word) (OriginallyColored original_color) (Hash hash)
+
+
+funky4 : String -> Team -> Team -> String -> Card
+funky4 hash turnedOverBy original_color word =
+    Turned (Word word) (TurnedOverBy turnedOverBy) (OriginallyColored original_color) (Hash hash)
 
 
 teamDecoder =

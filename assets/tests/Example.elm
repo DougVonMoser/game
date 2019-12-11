@@ -14,8 +14,24 @@ import Test.Html.Selector exposing (tag, text)
 unitTest : Test
 unitTest =
     describe "cardDecoder"
-        [ test "decodes unturned" <|
+        [ test "decodes turned" <|
             \() ->
-                D.decodeString cardDecoder "{\"hash\": \"IMAHASH\", \"original_color\": \"gray\", \"urned_over_by\": null, \"word\": \"porro\"}"
+                """{
+                    "hash": "IMAHASH", 
+                    "original_color": "gray", 
+                    "turned_over_by": "red", 
+                    "word": "porro"
+                }"""
+                    |> D.decodeString cardDecoder
+                    |> Expect.equal (Ok (Turned (Word "porro") (TurnedOverBy Red) (OriginallyColored NoTeam) (Hash "IMAHASH")))
+        , test "decodes unturned" <|
+            \() ->
+                """{
+                    "hash": "IMAHASH", 
+                    "original_color": "gray", 
+                    "turned_over_by": null, 
+                    "word": "porro"
+                }"""
+                    |> D.decodeString cardDecoder
                     |> Expect.equal (Ok (UnTurned (Word "porro") (OriginallyColored NoTeam) (Hash "IMAHASH")))
         ]
