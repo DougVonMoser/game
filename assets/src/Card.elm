@@ -149,6 +149,18 @@ turnOverCard turningOverTeam card =
             Debug.todo "OH MY GOD"
 
 
+teamToString team =
+    case team of
+        Red ->
+            "red"
+
+        Blue ->
+            "blue"
+
+        NoTeam ->
+            "gray"
+
+
 getTeamColor team =
     case team of
         Red ->

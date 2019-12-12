@@ -1,90 +1,23 @@
-port module Admin exposing (..)
+module Admin exposing (..)
 
 import Browser
 import Card exposing (..)
-import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Events exposing (onClick)
-import Element.Font as Font
-import Html exposing (Html)
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Http exposing (Error(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Main exposing (Model, Msg(..), fromSocket, toSocket)
 
 
 
 -- ---------------------------
 -- MODEL
 -- ---------------------------
-
-
-type alias Model =
-    { counter : Int
-    , serverMessage : String
-    , cards : List Card
-    }
-
-
-init : Int -> ( Model, Cmd Msg )
-init flags =
-    ( { counter = flags
-      , serverMessage = "nothing clicked yet"
-      , cards = initialCards
-      }
-    , toSocket <| Encode.string "connect"
-    )
-
-
-port toSocket : Encode.Value -> Cmd msg
-
-
-port fromSocket : (Decode.Value -> msg) -> Sub msg
-
-
-
 -- ---------------------------
 -- UPDATE
 -- ---------------------------
-
-
-type Msg
-    = Clicked Hash
-    | Hey Decode.Value
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update message model =
-    case message of
-        Clicked hash ->
-            handleClickUpdate hash model
-
-        Hey x ->
-            case Decode.decodeValue cardsDecoder x of
-                Ok decoded_thing ->
-                    ( { model | cards = decoded_thing }, Cmd.none )
-
-                Err e ->
-                    ( model, Cmd.none )
-
-
-handleClickUpdate clickedHash model =
-    let
-        updatedCards =
-            List.map
-                (\card ->
-                    if cardMatchesHash card clickedHash then
-                        turnOverCard Red card
-
-                    else
-                        card
-                )
-                model.cards
-    in
-    ( { model | cards = updatedCards, serverMessage = "something got clicked" }, Cmd.none )
-
-
-
 -- ---------------------------
 -- VIEW
 -- ---------------------------
@@ -92,41 +25,25 @@ handleClickUpdate clickedHash model =
 
 view : Model -> Html Msg
 view model =
-    Element.layout [] <|
-        column [ width (px 1000), spacing 80, centerX, centerY ] <|
-            [ el [] (text "admin"), cardsView model.cards ]
+    div [ class "page-container" ]
+        [ div [ class "board-container" ]
+            [ div [ class "cards" ] <| List.map cardView model.cards
+            ]
+        ]
 
 
-cardsView : List Card -> Element Msg
-cardsView cards =
-    wrappedRow [ spacing 80 ] <| List.map cardView cards
-
-
-cardView : Card -> Element Msg
+cardView : Card -> Html Msg
 cardView card =
     case card of
         UnTurned (Word word) (OriginallyColored team) hash ->
-            el
-                [ Background.color (rgb255 90 90 90)
-                , Font.color (rgb255 255 255 255)
-                , Border.rounded 3
-                , width (px 120)
-                , height (px 80)
-                , padding 30
-                , onClick <| Clicked hash
-                , pointer
+            div
+                [ class <| "card admin-unturned admin-" ++ teamToString team
+                , onClick <| Main.Clicked hash
                 ]
-                (text word)
+                [ span [ class "word" ] [ text word ] ]
 
         Turned (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) _ ->
-            el
-                [ Background.color <| getTeamColor originallyColoredTeam
-                , Border.rounded 3
-                , width (px 120)
-                , height (px 80)
-                , padding 30
-                ]
-                none
+            div [ class "card admin-turned" ] []
 
 
 
@@ -138,12 +55,12 @@ cardView card =
 main : Program Int Model Msg
 main =
     Browser.document
-        { init = init
-        , update = update
+        { init = Main.init
+        , update = Main.update
         , view =
             \m ->
-                { title = "Codenames Scoreboard"
+                { title = "ADMIN"
                 , body = [ view m ]
                 }
-        , subscriptions = \_ -> fromSocket Hey
+        , subscriptions = \_ -> fromSocket Main.Hey
         }
