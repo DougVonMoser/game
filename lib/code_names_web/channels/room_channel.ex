@@ -3,10 +3,11 @@ defmodule CodeNamesWeb.RoomChannel do
   # example because calculated at compile time
   @example_cards Codenames.Cards.generate_new_cards_for_game()
 
-  alias Codenames.Cards.Card
+  alias CodeNames.Cards.Card
+  alias CodeNames.GameServer
 
   def join("room:lobby", _message, socket) do
-    {:ok, @example_cards, socket}
+    {:ok, GameServer.get_cards(), socket}
   end
 
   def handle_in("new:msg", msg, socket) do
@@ -17,19 +18,8 @@ defmodule CodeNamesWeb.RoomChannel do
   def handle_in("clicked", msg, socket) do
     clicked_hash = msg["body"]
 
-    mapper = fn card ->
-      if card.hash == clicked_hash do
-        %{card | turned_over_by: card.original_color}
-      else
-        card
-      end
-    end
-
-    updated_cards = Enum.map(@example_cards, mapper)
+    updated_cards = GameServer.turn_card(clicked_hash)
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
-  end
-
-  def mapper(%Card{hash: hash}) do
   end
 end

@@ -5,6 +5,8 @@ defmodule Codenames.Cards.Card do
   hash will be a unique identifier string (uuid probs)
   """
   @derive Jason.Encoder
+
+  Faker.start()
   defstruct word: "testers", original_color: "gray", hash: nil, turned_over_by: nil
 
   def new(color) do

@@ -1,3 +1,5 @@
+Faker.start()
+
 defmodule CodeNames.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
@@ -11,7 +13,9 @@ defmodule CodeNames.Application do
       # Start the Ecto repository
       CodeNames.Repo,
       # Start the endpoint when the application starts
-      CodeNamesWeb.Endpoint
+      CodeNamesWeb.Endpoint,
+      CodeNames.GameServer
+
       # Starts a worker by calling: CodeNames.Worker.start_link(arg)
       # {CodeNames.Worker, arg},
     ]
