@@ -15,8 +15,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    
 }
+
+.admin-unturned:hover {
+    cursor: pointer;
+}
+
 .admin-turned {
     border-color: transparent;
     
@@ -27,6 +31,11 @@
    &gray {border-color: gray;} 
 }
 
+.audience- {
+   &red {background-color: red;} 
+   &blue {background-color: blue;} 
+   &gray {background-color: gray;} 
+}
 .word {
     display: flex;
     align-items: center;

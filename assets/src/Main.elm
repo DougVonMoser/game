@@ -2,12 +2,9 @@ port module Main exposing (..)
 
 import Browser
 import Card exposing (..)
-import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Events exposing (onClick)
-import Element.Font as Font
-import Html exposing (Html)
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Http exposing (Error(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
@@ -94,41 +91,27 @@ handleClickUpdate clickedHash model =
 
 view : Model -> Html Msg
 view model =
-    Element.layout [] <|
-        column [ width (px 1000), spacing 80, centerX, centerY ] <|
-            [ cardsView model.cards ]
+    div [ class "page-container" ]
+        [ div [ class "board-container" ]
+            [ div [ class "cards" ] <| List.map cardView model.cards
+            ]
+        ]
 
 
-cardsView : List Card -> Element Msg
-cardsView cards =
-    wrappedRow [ spacing 80 ] <| List.map cardView cards
-
-
-cardView : Card -> Element Msg
+cardView : Card -> Html Msg
 cardView card =
     case card of
         UnTurned (Word word) (OriginallyColored team) hash ->
-            el
-                [ Background.color (rgb255 90 90 90)
-                , Font.color (rgb255 255 255 255)
-                , Border.rounded 3
-                , width (px 120)
-                , height (px 80)
-                , padding 30
-                , onClick <| Clicked hash
-                , pointer
+            div
+                [ class <| "card audience-unturned"
                 ]
-                (text word)
+                [ span [ class "word" ] [ text word ] ]
 
         Turned (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) _ ->
-            el
-                [ Background.color <| getTeamColor originallyColoredTeam
-                , Border.rounded 3
-                , width (px 120)
-                , height (px 80)
-                , padding 30
+            div
+                [ class <| "card audience-turned audience-" ++ teamToString originallyColoredTeam
                 ]
-                none
+                []
 
 
 
