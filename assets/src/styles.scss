@@ -1,6 +1,13 @@
 @import '~purecss/build/pure.css';
 
+.page-container {
+    display: flex;
+}
+.score-container {
+    width: 16%;
+}
 .board-container {
+    width: 100%;
 }
 
 .cards {

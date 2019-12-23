@@ -93,10 +93,32 @@ handleClickUpdate clickedHash model =
 view : Model -> Html Msg
 view model =
     div [ class "page-container" ]
-        [ div [ class "board-container" ]
+        [ div [ class "score-container" ] <| scoreView model.cards
+        , div [ class "board-container" ]
             [ div [ class "cards" ] <| List.map cardView model.cards
             ]
         ]
+
+
+scoreView : List Card -> List (Html Msg)
+scoreView cards =
+    [ teamScoreView cards Red
+    , teamScoreView cards Blue
+    ]
+
+
+teamScoreView : List Card -> Team -> Html Msg
+teamScoreView cards team =
+    div []
+        [ h1 [] [ text <| teamToString team ]
+        , span [] [ text <| String.fromInt <| unTurnedCountOfTeam cards team ]
+        ]
+
+
+unTurnedCountOfTeam : List Card -> Team -> Int
+unTurnedCountOfTeam cards team =
+    List.filter (\c -> isUnTurned c && cardBelongsToTeam c team) cards
+        |> List.length
 
 
 cardView : Card -> Html Msg

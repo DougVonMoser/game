@@ -82,6 +82,26 @@ hashesAreEqual (Hash hash1) (Hash hash2) =
     hash1 == hash2
 
 
+isUnTurned : Card -> Bool
+isUnTurned card =
+    case card of
+        UnTurned _ _ _ ->
+            True
+
+        _ ->
+            False
+
+
+cardBelongsToTeam : Card -> Team -> Bool
+cardBelongsToTeam card team =
+    case card of
+        UnTurned _ (OriginallyColored teamCheck) _ ->
+            team == teamCheck
+
+        Turned _ _ (OriginallyColored teamCheck) _ ->
+            team == teamCheck
+
+
 cardMatchesHash : Card -> Hash -> Bool
 cardMatchesHash card hash1 =
     case card of
