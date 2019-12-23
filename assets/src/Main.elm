@@ -116,7 +116,7 @@ cardView card =
             div
                 [ class <| "card"
                 ]
-                [ div [ class "card-inner turnt shake-me" ]
+                [ div [ class "card-inner turnt" ]
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
                     , div [ class <| "card-back audience-" ++ teamToString originallyColoredTeam ] []
                     ]
