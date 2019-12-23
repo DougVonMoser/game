@@ -6,11 +6,10 @@ defmodule Codenames.Cards.Card do
   """
   @derive Jason.Encoder
 
-  Faker.start()
   defstruct word: "testers", original_color: "gray", hash: nil, turned_over_by: nil
 
-  def new(color) do
-    %__MODULE__{word: Faker.Lorem.word(), hash: Faker.UUID.v4(), original_color: color}
+  def new(color, word) do
+    %__MODULE__{word: word, hash: Ecto.UUID.generate(), original_color: color}
   end
 end
 

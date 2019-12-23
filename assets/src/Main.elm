@@ -1,5 +1,6 @@
 port module Main exposing (..)
 
+import Animation as A exposing (px)
 import Browser
 import Card exposing (..)
 import Html exposing (..)
@@ -103,15 +104,23 @@ cardView card =
     case card of
         UnTurned (Word word) (OriginallyColored team) hash ->
             div
-                [ class <| "card audience-unturned"
+                [ class <| "card "
                 ]
-                [ span [ class "word" ] [ text word ] ]
+                [ div [ class "card-inner" ]
+                    [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
+                    , div [ class "card-back " ] []
+                    ]
+                ]
 
         Turned (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) _ ->
             div
-                [ class <| "card audience-turned audience-" ++ teamToString originallyColoredTeam
+                [ class <| "card"
                 ]
-                []
+                [ div [ class "card-inner turnt shake-me" ]
+                    [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
+                    , div [ class <| "card-back audience-" ++ teamToString originallyColoredTeam ] []
+                    ]
+                ]
 
 
 

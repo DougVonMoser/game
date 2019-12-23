@@ -1,5 +1,3 @@
-Faker.start()
-
 defmodule CodeNames.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
