@@ -116,7 +116,7 @@ transferOverStyles oldCards newCards =
                         UnTurned style word oc hash ->
                             case new of
                                 Turned _ _ _ _ _ ->
-                                    Turned (Animation.interrupt turnt style) word (TurnedOverBy Red) oc hash
+                                    Turned (Animation.interrupt getTurnt style) word (TurnedOverBy Red) oc hash
 
                                 _ ->
                                     old
@@ -143,8 +143,8 @@ defaultTurnt =
     Animation.style [ Animation.rotate3d (deg 0) (deg 180) (deg 0) ]
 
 
-turnt : List Animation.Step
-turnt =
+getTurnt : List Animation.Step
+getTurnt =
     [ Animation.to [ Animation.rotate3d (deg 0) (deg 180) (deg 0) ] ]
 
 
