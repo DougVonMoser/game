@@ -48,7 +48,7 @@ funky hash original_color word =
 
 funky4 : String -> Team -> Team -> String -> Card
 funky4 hash turnedOverBy original_color word =
-    Turned (Animation.style []) (Word word) (TurnedOverBy turnedOverBy) (OriginallyColored original_color) (Hash hash)
+    Turned defaultTurnt (Word word) (TurnedOverBy turnedOverBy) (OriginallyColored original_color) (Hash hash)
 
 
 teamDecoder =
@@ -137,6 +137,10 @@ transferOverStyles oldCards newCards =
 
 unturnt =
     Animation.style [ Animation.rotate3d (deg 0) (deg 0) (deg 0) ]
+
+
+defaultTurnt =
+    Animation.style [ Animation.rotate3d (deg 0) (deg 180) (deg 0) ]
 
 
 turnt : List Animation.Step
