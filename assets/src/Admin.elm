@@ -37,7 +37,7 @@ cardView card =
     case card of
         UnTurned (Word word) (OriginallyColored team) hash ->
             div
-                [ class <| "card admin-unturned admin-" ++ teamToString team
+                [ class <| "card card-inner admin-unturned admin-" ++ teamToString team
                 , onClick <| Main.Clicked hash
                 ]
                 [ span [ class "word" ] [ text word ] ]

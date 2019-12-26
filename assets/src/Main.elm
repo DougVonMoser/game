@@ -109,9 +109,9 @@ scoreView cards =
 
 teamScoreView : List Card -> Team -> Html Msg
 teamScoreView cards team =
-    div []
-        [ h1 [] [ text <| teamToString team ]
-        , span [] [ text <| String.fromInt <| unTurnedCountOfTeam cards team ]
+    div [ class "team-score" ]
+        [ h1 [ class "team" ] [ text <| teamToString team ]
+        , span [ class "score" ] [ text <| String.fromInt <| unTurnedCountOfTeam cards team ]
         ]
 
 

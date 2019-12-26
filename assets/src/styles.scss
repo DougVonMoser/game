@@ -4,7 +4,26 @@
     display: flex;
 }
 .score-container {
+    display: flex;
+    flex-direction: column;
     width: 16%;
+    height: 95vh;
+    .team-score {
+        min-height: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: solid gray 1px;
+        border-radius: 5px;
+        margin: 8px;
+        .team {
+            margin-top: 24px;
+            font-size: 80px;
+        }
+        .score {
+            font-size: 56px;
+        }
+    }
 }
 .board-container {
     width: 100%;
@@ -27,8 +46,6 @@
         border: solid black 8px;
         height: 100%;
         text-align: center;
-        //idk if were using transition here anymore
-        transition: transform 0.8s;
         transform-style: preserve-3d;
     }
     &-front, &-back {
@@ -51,9 +68,9 @@
   transform: rotateY(180deg);
 }
 
-//.admin-unturned:hover {
-//    cursor: pointer;
-//}
+.admin-unturned:hover {
+    cursor: pointer;
+}
 //
 //.admin-turned {
 //    border-color: transparent;
