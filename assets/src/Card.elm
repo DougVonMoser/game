@@ -3,14 +3,15 @@ module Card exposing (..)
 -- Card should be monoidal for the comprehensive game
 -- who flipped, originalColor, unique Identifier yada yada
 
-import Element exposing (..)
+import Animation exposing (State, deg, px)
 import Json.Decode as D exposing (Decoder, at, string)
 import Json.Encode as E exposing (Value)
+import List.Extra as List
 
 
 type Card
-    = UnTurned Word OriginallyColored Hash
-    | Turned Word TurnedOverBy OriginallyColored Hash
+    = UnTurned State Word OriginallyColored Hash
+    | Turned State Word TurnedOverBy OriginallyColored Hash
 
 
 cardsDecoder =
@@ -39,12 +40,15 @@ cardDecoder =
 
 funky : String -> Team -> String -> Card
 funky hash original_color word =
-    UnTurned (Word word) (OriginallyColored original_color) (Hash hash)
+    UnTurned unturnt
+        (Word word)
+        (OriginallyColored original_color)
+        (Hash hash)
 
 
 funky4 : String -> Team -> Team -> String -> Card
 funky4 hash turnedOverBy original_color word =
-    Turned (Word word) (TurnedOverBy turnedOverBy) (OriginallyColored original_color) (Hash hash)
+    Turned (Animation.style []) (Word word) (TurnedOverBy turnedOverBy) (OriginallyColored original_color) (Hash hash)
 
 
 teamDecoder =
@@ -85,30 +89,88 @@ hashesAreEqual (Hash hash1) (Hash hash2) =
 isUnTurned : Card -> Bool
 isUnTurned card =
     case card of
-        UnTurned _ _ _ ->
+        UnTurned _ _ _ _ ->
             True
 
         _ ->
             False
 
 
+mapStyle : Animation.Msg -> Card -> Card
+mapStyle animMsg card =
+    case card of
+        UnTurned style w oc h ->
+            UnTurned (Animation.update animMsg style) w oc h
+
+        Turned style w tob oc h ->
+            Turned (Animation.update animMsg style) w tob oc h
+
+
+transferOverStyles : List Card -> List Card -> List Card
+transferOverStyles oldCards newCards =
+    List.map
+        (\new ->
+            case List.find (sameCard new) oldCards of
+                Just old ->
+                    case old of
+                        UnTurned style word oc hash ->
+                            case new of
+                                Turned _ _ _ _ _ ->
+                                    Turned (Animation.interrupt turnt style) word (TurnedOverBy Red) oc hash
+
+                                _ ->
+                                    old
+
+                        _ ->
+                            old
+
+                Nothing ->
+                    new
+        )
+        newCards
+
+
+
+-- TURNT!
+-- THESE HAVE TO COMPLEMENT EACH OTHER
+
+
+unturnt =
+    Animation.style [ Animation.rotate3d (deg 0) (deg 0) (deg 0) ]
+
+
+turnt : List Animation.Step
+turnt =
+    [ Animation.to [ Animation.rotate3d (deg 0) (deg 180) (deg 0) ] ]
+
+
 cardBelongsToTeam : Card -> Team -> Bool
 cardBelongsToTeam card team =
     case card of
-        UnTurned _ (OriginallyColored teamCheck) _ ->
+        UnTurned _ _ (OriginallyColored teamCheck) _ ->
             team == teamCheck
 
-        Turned _ _ (OriginallyColored teamCheck) _ ->
+        Turned _ _ _ (OriginallyColored teamCheck) _ ->
             team == teamCheck
+
+
+sameCard : Card -> Card -> Bool
+sameCard c1 c2 =
+    case c1 of
+        UnTurned _ _ _ hash ->
+            cardMatchesHash c2 hash
+
+        Turned _ _ _ _ hash ->
+            cardMatchesHash c2 hash
 
 
 cardMatchesHash : Card -> Hash -> Bool
 cardMatchesHash card hash1 =
     case card of
-        UnTurned _ _ hash2 ->
+        UnTurned _ _ _ hash2 ->
             hashesAreEqual hash1 hash2
 
-        Turned _ _ _ hash2 ->
+        Turned _ _ _ _ hash2 ->
             hashesAreEqual hash1 hash2
 
 
@@ -130,43 +192,34 @@ type Team
     | NoTeam
 
 
-initialCards =
-    [ UnTurned (Word "testing") (OriginallyColored Blue)
-    , UnTurned (Word "testing") (OriginallyColored Blue)
-    , UnTurned (Word "testing") (OriginallyColored Blue)
-    , UnTurned (Word "testing") (OriginallyColored Blue)
-    , UnTurned (Word "testing") (OriginallyColored Blue)
-    , UnTurned (Word "testing") (OriginallyColored Blue)
-    , UnTurned (Word "testing") (OriginallyColored Blue)
-    , UnTurned (Word "testing") (OriginallyColored Red)
-    , UnTurned (Word "testing") (OriginallyColored Red)
-    , UnTurned (Word "testing") (OriginallyColored Red)
-    , UnTurned (Word "testing") (OriginallyColored Red)
-    , UnTurned (Word "testing") (OriginallyColored Red)
-    , UnTurned (Word "testing") (OriginallyColored Red)
-    , UnTurned (Word "testing") (OriginallyColored Red)
-    , UnTurned (Word "testing") (OriginallyColored NoTeam)
-    , UnTurned (Word "testing") (OriginallyColored NoTeam)
-    , UnTurned (Word "testing") (OriginallyColored NoTeam)
-    , UnTurned (Word "testing") (OriginallyColored NoTeam)
-    , UnTurned (Word "testing") (OriginallyColored NoTeam)
-    , UnTurned (Word "testing") (OriginallyColored NoTeam)
-    , UnTurned (Word "testing") (OriginallyColored NoTeam)
-    , UnTurned (Word "testing") (OriginallyColored NoTeam)
-    , UnTurned (Word "testing") (OriginallyColored NoTeam)
-    , UnTurned (Word "testing") (OriginallyColored NoTeam)
-    , UnTurned (Word "testing") (OriginallyColored NoTeam)
-    ]
-        |> List.indexedMap (\_ y -> y (Hash "darn"))
-
-
 turnOverCard turningOverTeam card =
     case card of
-        UnTurned word originallyColored hash ->
-            Turned word (TurnedOverBy turningOverTeam) originallyColored hash
+        UnTurned style word originallyColored hash ->
+            let
+                newStyle =
+                    Animation.interrupt
+                        [ Animation.to
+                            [ Animation.opacity 0
+                            ]
+                        , Animation.to
+                            [ Animation.opacity 1
+                            ]
+                        ]
+                        style
+            in
+            Turned newStyle word (TurnedOverBy turningOverTeam) originallyColored hash
 
-        Turned _ _ _ _ ->
+        Turned _ _ _ _ _ ->
             Debug.todo "OH MY GOD"
+
+
+cardToItsStyle card =
+    case card of
+        UnTurned style _ _ _ ->
+            style
+
+        Turned style _ _ _ _ ->
+            style
 
 
 teamToString team =
@@ -179,15 +232,3 @@ teamToString team =
 
         NoTeam ->
             "gray"
-
-
-getTeamColor team =
-    case team of
-        Red ->
-            rgb255 255 0 0
-
-        Blue ->
-            rgb255 0 0 255
-
-        NoTeam ->
-            rgb255 60 60 60

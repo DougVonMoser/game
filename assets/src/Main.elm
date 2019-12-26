@@ -1,6 +1,6 @@
 port module Main exposing (..)
 
-import Animation as A exposing (px)
+import Animation exposing (px)
 import Browser
 import Card exposing (..)
 import Html exposing (..)
@@ -28,7 +28,7 @@ init : Int -> ( Model, Cmd Msg )
 init flags =
     ( { counter = flags
       , serverMessage = "nothing clicked yet"
-      , cards = initialCards
+      , cards = []
       }
     , toSocket <| Encode.string "connect"
     )
@@ -49,18 +49,34 @@ port fromSocket : (Decode.Value -> msg) -> Sub msg
 type Msg
     = Clicked Hash
     | Hey Decode.Value
+    | Animate Animation.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
+        Animate animMsg ->
+            let
+                updatedCards =
+                    List.map (mapStyle animMsg) model.cards
+            in
+            ( { model | cards = updatedCards }, Cmd.none )
+
         Clicked hash ->
             handleClickUpdate hash model
 
         Hey x ->
             case Decode.decodeValue cardsDecoder x of
                 Ok decoded_thing ->
-                    ( { model | cards = decoded_thing }, Cmd.none )
+                    let
+                        updatedCards =
+                            if model.cards == [] then
+                                decoded_thing
+
+                            else
+                                transferOverStyles model.cards decoded_thing
+                    in
+                    ( { model | cards = updatedCards }, Cmd.none )
 
                 Err e ->
                     ( model, Cmd.none )
@@ -124,21 +140,21 @@ unTurnedCountOfTeam cards team =
 cardView : Card -> Html Msg
 cardView card =
     case card of
-        UnTurned (Word word) (OriginallyColored team) hash ->
+        UnTurned style (Word word) (OriginallyColored team) hash ->
             div
                 [ class <| "card "
                 ]
-                [ div [ class "card-inner" ]
+                [ div (Animation.render style ++ [ class "card-inner" ])
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
                     , div [ class "card-back " ] []
                     ]
                 ]
 
-        Turned (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) _ ->
+        Turned style (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) _ ->
             div
                 [ class <| "card"
                 ]
-                [ div [ class "card-inner turnt" ]
+                [ div (Animation.render style ++ [ class "card-inner" ])
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
                     , div [ class <| "card-back audience-" ++ teamToString originallyColoredTeam ] []
                     ]
@@ -161,5 +177,16 @@ main =
                 { title = "Codenames Scoreboard"
                 , body = [ view m ]
                 }
-        , subscriptions = \_ -> fromSocket Hey
+        , subscriptions = subscriptions
         }
+
+
+subscriptions model =
+    let
+        ignore =
+            Debug.log "initial cardies" model.cards
+    in
+    Sub.batch
+        [ fromSocket Hey
+        , Animation.subscription Animate (List.map cardToItsStyle model.cards)
+        ]

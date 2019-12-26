@@ -35,14 +35,14 @@ view model =
 cardView : Card -> Html Msg
 cardView card =
     case card of
-        UnTurned (Word word) (OriginallyColored team) hash ->
+        UnTurned _ (Word word) (OriginallyColored team) hash ->
             div
                 [ class <| "card card-inner admin-unturned admin-" ++ teamToString team
                 , onClick <| Main.Clicked hash
                 ]
                 [ span [ class "word" ] [ text word ] ]
 
-        Turned (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) _ ->
+        Turned _ (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) _ ->
             div [ class "card admin-turned" ] []
 
 
