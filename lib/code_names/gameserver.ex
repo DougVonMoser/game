@@ -33,6 +33,13 @@ defmodule CodeNames.GameServer do
     {:reply, cards, cards}
   end
 
+  def handle_call(:restart, _from, _) do
+    IO.inspect("I WAS RESTARTED")
+    new_cards = Codenames.Cards.generate_new_cards_for_game()
+
+    {:reply, new_cards, new_cards}
+  end
+
   def turn_card(hash) do
     IO.inspect("I WAS turn carded")
     GenServer.call(__MODULE__, {:clicked, hash})
@@ -40,5 +47,9 @@ defmodule CodeNames.GameServer do
 
   def get_cards do
     GenServer.call(__MODULE__, :get_cards)
+  end
+
+  def restart do
+    GenServer.call(__MODULE__, :restart)
   end
 end

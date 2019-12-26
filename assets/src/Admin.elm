@@ -19,12 +19,19 @@ import Main exposing (Model, fromSocket, toSocket)
 
 type alias Model =
     { cards : List Card
+    , panel : Panel
     }
+
+
+type Panel
+    = Unopened
+    | Opened
 
 
 init : Int -> ( Model, Cmd AdminMsg )
 init flags =
     ( { cards = []
+      , panel = Unopened
       }
     , toSocket <| Encode.string "connect"
     )
@@ -39,11 +46,23 @@ init flags =
 type AdminMsg
     = Clicked Hash
     | Hey Decode.Value
+    | ShowPanel
+    | HidePanel
+    | TriggerRestart
 
 
 update : AdminMsg -> Model -> ( Model, Cmd AdminMsg )
 update message model =
     case message of
+        TriggerRestart ->
+            ( model, toSocket <| Encode.string "restart" )
+
+        ShowPanel ->
+            ( { model | panel = Opened }, Cmd.none )
+
+        HidePanel ->
+            ( { model | panel = Unopened }, Cmd.none )
+
         Clicked hash ->
             handleClickUpdate hash model
 
@@ -90,11 +109,16 @@ handleClickUpdate clickedHash model =
 
 view : Model -> Html AdminMsg
 view model =
-    div [ class "page-container" ]
-        [ div [ class "board-container" ]
-            [ div [ class "cards" ] <| List.map cardView model.cards
+    div [ class "admin-container" ]
+        [ div [ class "admin-bar" ] [ adminBarView model ]
+        , div [ class "board-container" ]
+            [ div [ class "admin-cards" ] <| List.map cardView model.cards
             ]
         ]
+
+
+adminBarView model =
+    div [ onClick TriggerRestart ] [ text "restart game" ]
 
 
 cardView : Card -> Html AdminMsg

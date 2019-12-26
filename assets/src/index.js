@@ -38,6 +38,8 @@ app.ports.toSocket.subscribe(message => {
             app.ports.fromSocket.send(msg.cards)
         })
 
+    } else if (message == "restart"){
+        channel.push("restart", {})
     } else {
         // assume its a clicked card for now :)
         channel.push("clicked", {body: message})

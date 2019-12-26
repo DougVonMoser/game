@@ -22,4 +22,10 @@ defmodule CodeNamesWeb.RoomChannel do
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
   end
+
+  def handle_in("restart", _, socket) do
+    updated_cards = GameServer.restart()
+    broadcast!(socket, "updateFromServer", %{cards: updated_cards})
+    {:noreply, socket}
+  end
 end

@@ -8,6 +8,7 @@ defmodule Codenames.Cards do
 
   def generate_new_cards_for_game do
     (List.duplicate("red", 7) ++ List.duplicate("blue", 7) ++ List.duplicate("gray", 11))
+    |> Enum.shuffle()
     |> Enum.zip(twenty_five_static_real_words())
     |> Enum.map(fn {color, word} -> Card.new(color, word) end)
     |> Enum.shuffle()

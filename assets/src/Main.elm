@@ -78,24 +78,6 @@ update message model =
                     ( model, Cmd.none )
 
 
-handleClickUpdate clickedHash model =
-    let
-        updatedCards =
-            List.map
-                (\card ->
-                    if cardMatchesHash card clickedHash then
-                        turnOverCard Red card
-
-                    else
-                        card
-                )
-                model.cards
-    in
-    ( { model | cards = updatedCards, serverMessage = "something got clicked" }
-    , toSocket (encodeHash clickedHash)
-    )
-
-
 
 -- ---------------------------
 -- VIEW
