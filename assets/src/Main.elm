@@ -47,8 +47,7 @@ port fromSocket : (Decode.Value -> msg) -> Sub msg
 
 
 type Msg
-    = Clicked Hash
-    | Hey Decode.Value
+    = Hey Decode.Value
     | Animate Animation.Msg
 
 
@@ -61,9 +60,6 @@ update message model =
                     List.map (mapStyle animMsg) model.cards
             in
             ( { model | cards = updatedCards }, Cmd.none )
-
-        Clicked hash ->
-            handleClickUpdate hash model
 
         Hey x ->
             case Decode.decodeValue cardsDecoder x of
