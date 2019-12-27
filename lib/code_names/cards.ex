@@ -5,16 +5,28 @@ defmodule Codenames.Cards do
   """
 
   alias Codenames.Cards.Card
+  alias Codenames.Cards.ExhaustiveWordList
 
   def generate_new_cards_for_game do
-    (List.duplicate("red", 7) ++ List.duplicate("blue", 7) ++ List.duplicate("gray", 11))
+    red_and_blues_and_grays()
     |> Enum.shuffle()
     |> Enum.zip(twenty_five_static_real_words())
     |> Enum.map(fn {color, word} -> Card.new(color, word) end)
     |> Enum.shuffle()
   end
 
+  def red_and_blues_and_grays do
+    ["red", "blue"]
+    |> Enum.shuffle()
+    |> Enum.zip([9, 8])
+    |> Enum.map(fn {color, count} -> List.duplicate(color, count) end)
+    |> Enum.concat()
+    |> Kernel.++(List.duplicate("gray", 8))
+  end
+
   def twenty_five_static_real_words do
-    ~w( yard apple mine turkey check queen kiwi code copper jack undertaker cell play cover mail tooth point tube force track game washer bell octopus chair)
+    ExhaustiveWordList.words()
+    |> Enum.shuffle()
+    |> Enum.take(25)
   end
 end

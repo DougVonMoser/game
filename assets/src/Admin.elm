@@ -118,7 +118,7 @@ view model =
 
 
 adminBarView model =
-    div [ onClick TriggerRestart ] [ text "restart game" ]
+    div [ onClick TriggerRestart ] [ text "new game" ]
 
 
 cardView : Card -> Html AdminMsg

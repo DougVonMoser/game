@@ -91,7 +91,7 @@
 .admin- {
    &red {border-color: red; background-color: red;} 
    &blue {border-color: blue; background-color: blue;} 
-   &gray {border-color: gray;} 
+   &gray {border-color: gray; background-color: lightgray;} 
 }
 
 .audience- {
@@ -100,6 +100,7 @@
    &gray {background-color: gray;} 
 }
 .word {
+    text-transform: uppercase;
     background-color: white;
     display: flex;
     align-items: center;
