@@ -1,7 +1,6 @@
 defmodule Codenames.Cards do
   @doc """
   returns random cards for a new game
-  for now, even 7 for each team
   """
 
   alias Codenames.Cards.Card
@@ -26,6 +25,7 @@ defmodule Codenames.Cards do
 
   def twenty_five_static_real_words do
     ExhaustiveWordList.words()
+    |> Enum.uniq()
     |> Enum.shuffle()
     |> Enum.take(25)
   end

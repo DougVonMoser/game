@@ -54,7 +54,9 @@
     margin: 16px;
 }
 .card {
-    height: 150px;
+    @media only screen and (min-width: 900px) {
+        height: 150px;
+    }
     perspective: 1000px;
     &-inner {
         border-radius: 4px;
@@ -108,7 +110,9 @@
     border-radius: 4px;
     min-width: 90%;
     border: solid gray 1px;
-    font-size: 32px;
+    @media only screen and (min-width: 900px) {
+        font-size: 32px;
+    } 
 }
 
 .turnt {
