@@ -88,8 +88,10 @@ view : Model -> Html Msg
 view model =
     div [ class "page-container" ]
         [ div [ class "score-container" ] <| scoreView model.cards
-        , div [ class "board-container" ]
-            [ div [ class "cards" ] <| List.map cardView model.cards
+        , div [ class "outer-board" ]
+            [ div [ class "board-container" ]
+                [ div [ class "cards" ] <| List.map cardView model.cards
+                ]
             ]
         ]
 
