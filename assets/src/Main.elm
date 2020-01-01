@@ -136,7 +136,7 @@ cardView card =
                 ]
                 [ div (Animation.render style ++ [ class "card-inner" ])
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
-                    , div [ class <| "card-back audience-" ++ teamToString originallyColoredTeam ] []
+                    , div [ class <| "card-back audience-" ++ teamToString originallyColoredTeam ] [ span [ class "word" ] [ text word ] ]
                     ]
                 ]
 

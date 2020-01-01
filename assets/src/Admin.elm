@@ -132,7 +132,9 @@ cardView card =
                 [ span [ class "word" ] [ text word ] ]
 
         Turned _ (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) _ ->
-            div [ class "card admin-turned" ] []
+            div
+                [ class <| "card card-inner admin-turned admin-" ++ teamToString originallyColoredTeam ]
+                [ span [ class "word" ] [ text word ] ]
 
 
 
