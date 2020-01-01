@@ -162,10 +162,6 @@ main =
 
 
 subscriptions model =
-    let
-        ignore =
-            Debug.log "initial cardies" model.cards
-    in
     Sub.batch
         [ fromSocket Hey
         , Animation.subscription Animate (List.map cardToItsStyle model.cards)

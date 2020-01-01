@@ -243,8 +243,8 @@ turnOverCard turningOverTeam card =
             in
             Turned newStyle word (TurnedOverBy turningOverTeam) originallyColored hash
 
-        Turned _ _ _ _ _ ->
-            Debug.todo "OH MY GOD"
+        (Turned _ _ _ _ _) as x ->
+            x
 
 
 cardToItsStyle card =

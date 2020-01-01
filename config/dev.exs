@@ -32,6 +32,7 @@ config :code_names, CodeNamesWeb.Endpoint,
     ]
   ]
 
+config :code_names, :envy, :dev
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed

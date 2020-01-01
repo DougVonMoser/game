@@ -12,20 +12,19 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 var MODE =
     process.env.npm_lifecycle_event === "prod" ? "production" : "development";
 var withDebug = !process.env["npm_config_nodebug"] && MODE == "development";
-// this may help for Yarn users
-// var withDebug = !npmParams.includes("--nodebug");
+console.log( process.env.npm_lifecycle_event );
 console.log('\x1b[36m%s\x1b[0m', `** elm-webpack-starter: mode "${MODE}", withDebug: ${withDebug}\n`);
 
 var common = {
     mode: MODE,
-    entry: { app :"./src/index.js", admin : "./src/admin.js"},
+    entry: "./src/index.js",
     output: {
         path: path.resolve(__dirname, '../priv/static/js'),
         //path: path.join(__dirname, "dist"),
         publicPath: MODE == "production" ? "/" : "http://localhost:3000/",
         // FIXME webpack -p automatically adds hash when building for production
         //filename: MODE == "production" ? "[name]-[hash].js" : "index.js"
-        filename: '[name].js'
+        filename: 'app.js'
     },
     plugins: [
         new HTMLWebpackPlugin({
@@ -152,7 +151,7 @@ if (MODE === "production") {
             new MiniCssExtractPlugin({
                 // Options similar to the same options in webpackOptions.output
                 // both options are optional
-                filename: "[name]-[hash].css"
+                filename: "app.css"
             })
         ],
         module: {

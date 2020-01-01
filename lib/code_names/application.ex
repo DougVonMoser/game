@@ -9,7 +9,7 @@ defmodule CodeNames.Application do
     # List all child processes to be supervised
     children = [
       # Start the Ecto repository
-      CodeNames.Repo,
+      # CodeNames.Repo,
       # Start the endpoint when the application starts
       CodeNamesWeb.Endpoint,
       CodeNames.GameServer
