@@ -1,0 +1,5 @@
+FROM amazonlinux
+ENV HOST_URL=poopsmith
+COPY ./thingie15 ./thingie15
+EXPOSE 4000
+CMD ./thingie15/bin/code_names start

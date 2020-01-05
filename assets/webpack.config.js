@@ -123,18 +123,19 @@ if (MODE === "development") {
 if (MODE === "production") {
     module.exports = merge(common, {
         optimization: {
-            minimizer: [
-              new ClosurePlugin({mode: 'STANDARD'}, {
-                // compiler flags here
-                //
-                // for debugging help, try these:
-                //
-                // formatting: 'PRETTY_PRINT',
-                // debug: true
-                // renaming: false
-              })
-            ]
-          }, plugins: [
+            // minimizer: [
+            //   new ClosurePlugin({mode: 'STANDARD'}, {
+            //     // compiler flags here
+            //     //
+            //     // for debugging help, try these:
+            //     //
+            //     // formatting: 'PRETTY_PRINT',
+            //     // debug: true
+            //     // renaming: false
+            //   })
+            // ]
+          }, 
+        plugins: [
             // Delete everything from output-path (/dist) and report to user
             new CleanWebpackPlugin({
                 root: __dirname,
@@ -162,7 +163,8 @@ if (MODE === "production") {
                     use: {
                         loader: "elm-webpack-loader",
                         options: {
-                            optimize: true
+                            optimize: false,
+                            pathToElm: 'node_modules/.bin/elm'
                         }
                     }
                 },
