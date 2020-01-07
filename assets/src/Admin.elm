@@ -1,14 +1,13 @@
 module Admin exposing (..)
 
 import Browser
-import Card exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Http exposing (Error(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Main exposing (Model, fromSocket, toSocket)
+import Main exposing (..)
 
 
 
@@ -70,9 +69,9 @@ update message model =
             case Decode.decodeValue cardsDecoder x of
                 Ok decoded_thing ->
                     let
-                        updatedCards =
+                        ( updatedCards, _ ) =
                             if model.cards == [] then
-                                decoded_thing
+                                ( decoded_thing, Nothing )
 
                             else
                                 transferOverStyles model.cards decoded_thing
@@ -81,6 +80,15 @@ update message model =
 
                 Err e ->
                     ( model, Cmd.none )
+
+
+turnOverCard turningOverTeam card =
+    case card of
+        UnTurned style word originallyColored hash ->
+            Turned style word (TurnedOverBy turningOverTeam) originallyColored hash
+
+        (Turned _ _ _ _ _) as x ->
+            x
 
 
 handleClickUpdate clickedHash model =
