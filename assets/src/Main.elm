@@ -33,7 +33,7 @@ init flags =
       , serverMessage = "nothing clicked yet"
       , cards = []
       , broadAnimations = []
-      , boardStyle = Animation.style [ Animation.scale 1 ]
+      , boardStyle = Animation.style [ Animation.scale 1, Animation.translate (px 0) (px 0) ]
       }
     , toSocket <| E.string "connect"
     )
@@ -81,7 +81,7 @@ update message model =
         TurnedReadyToZoomOut ->
             let
                 updatedBoardStyle =
-                    Animation.interrupt [ Animation.to [ Animation.scale 1 ] ]
+                    Animation.interrupt [ Animation.to [ Animation.scale 1, Animation.translate (px 0) (px 0) ] ]
                         model.boardStyle
             in
             ( { model | boardStyle = updatedBoardStyle }, Cmd.none )
@@ -107,23 +107,29 @@ update message model =
                             else
                                 transferOverStyles model.cards decoded_thing
 
-                        updatedBoardStyle : Animation.Messenger.State Msg
-                        updatedBoardStyle =
-                            case Debug.log "maybeHash" maybeHash of
-                                Just hash ->
-                                    Animation.interrupt
-                                        [ Animation.to [ Animation.scale 4 ]
-                                        , Animation.Messenger.send <| ZoomedInReadyToTurn hash
-                                        ]
-                                        model.boardStyle
-
-                                Nothing ->
-                                    model.boardStyle
+                        ( updatedBoardStyle, boardCmd ) =
+                            updateBoardStyle maybeHash model.boardStyle
                     in
                     ( { model | cards = updatedCards, boardStyle = updatedBoardStyle }, Cmd.none )
 
                 Err e ->
                     Debug.todo "UH OH SPAGHHETIO"
+
+
+updateBoardStyle : Maybe Hash -> Animation.Messenger.State Msg -> ( Animation.Messenger.State Msg, Cmd Msg )
+updateBoardStyle maybeHash boardStyle =
+    case maybeHash of
+        Just hash ->
+            ( Animation.interrupt
+                [ Animation.to [ Animation.scale 4, Animation.translate (px 0) (px 178) ]
+                , Animation.Messenger.send <| ZoomedInReadyToTurn hash
+                ]
+                boardStyle
+            , Cmd.none
+            )
+
+        Nothing ->
+            ( boardStyle, Cmd.none )
 
 
 
