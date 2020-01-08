@@ -79,11 +79,7 @@ update message model =
     case message of
         Thing x ->
             case x of
-                Err foo ->
-                    let
-                        ignore =
-                            Debug.log "foo" foo
-                    in
+                Err _ ->
                     ( model, Cmd.none )
 
                 Ok val ->
@@ -91,10 +87,10 @@ update message model =
                         Double hash turnedElement middleElement ->
                             let
                                 ignore2 =
-                                    Debug.log "found a middle" middleElement.element
+                                    middleElement.element
 
                                 ignore =
-                                    Debug.log "found a hash" turnedElement.element
+                                    turnedElement.element
 
                                 toTranslate : ContainerToTranslate
                                 toTranslate =
@@ -131,9 +127,6 @@ update message model =
             let
                 updatedCards =
                     manuallyTurnCardByHash model.cards hash
-
-                ignore =
-                    Debug.log "IA EM HERE " "cmon"
             in
             ( { model | cards = updatedCards }, Cmd.none )
 
@@ -154,7 +147,7 @@ update message model =
                     ( { model | cards = updatedCards }, boardCmd )
 
                 Err e ->
-                    Debug.todo "UH OH SPAGHHETIO"
+                    ( model, Cmd.none )
 
 
 updateBoardCmd : Maybe Hash -> Cmd Msg
