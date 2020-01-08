@@ -3,6 +3,7 @@ port module Main exposing (..)
 import Animation exposing (deg, px)
 import Animation.Messenger exposing (State)
 import Browser
+import Browser.Dom as Dom
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
@@ -10,6 +11,7 @@ import Http exposing (Error(..))
 import Json.Decode as D exposing (Decoder, at, string)
 import Json.Encode as E exposing (Value)
 import List.Extra as List
+import Task
 
 
 
@@ -56,16 +58,55 @@ port fromSocket : (D.Value -> msg) -> Sub msg
 -- ---------------------------
 
 
+type Double a b
+    = Double Hash a b
+
+
 type Msg
     = Hey D.Value
     | Animate Animation.Msg
     | ZoomedInReadyToTurn Hash
     | TurnedReadyToZoomOut
+    | Thing (Result Dom.Error (Double Dom.Element Dom.Element))
+
+
+type ContainerToTranslate
+    = ContainerToTranslate Float Float
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
+        Thing x ->
+            case x of
+                Err foo ->
+                    let
+                        ignore =
+                            Debug.log "foo" foo
+                    in
+                    ( model, Cmd.none )
+
+                Ok val ->
+                    case val of
+                        Double hash turnedElement middleElement ->
+                            let
+                                ignore2 =
+                                    Debug.log "found a middle" middleElement.element
+
+                                ignore =
+                                    Debug.log "found a hash" turnedElement.element
+
+                                toTranslate : ContainerToTranslate
+                                toTranslate =
+                                    ContainerToTranslate
+                                        (ignore2.x - ignore.x)
+                                        (ignore2.y - ignore.y)
+
+                                updatedBoardStyle =
+                                    updateBoardStyle toTranslate hash model.boardStyle
+                            in
+                            ( { model | boardStyle = updatedBoardStyle }, Cmd.none )
+
         Animate animMsg ->
             let
                 ( updatedCards, cardCmds ) =
@@ -107,29 +148,36 @@ update message model =
                             else
                                 transferOverStyles model.cards decoded_thing
 
-                        ( updatedBoardStyle, boardCmd ) =
-                            updateBoardStyle maybeHash model.boardStyle
+                        boardCmd =
+                            updateBoardCmd maybeHash
                     in
-                    ( { model | cards = updatedCards, boardStyle = updatedBoardStyle }, Cmd.none )
+                    ( { model | cards = updatedCards }, boardCmd )
 
                 Err e ->
                     Debug.todo "UH OH SPAGHHETIO"
 
 
-updateBoardStyle : Maybe Hash -> Animation.Messenger.State Msg -> ( Animation.Messenger.State Msg, Cmd Msg )
-updateBoardStyle maybeHash boardStyle =
+updateBoardCmd : Maybe Hash -> Cmd Msg
+updateBoardCmd maybeHash =
     case maybeHash of
         Just hash ->
-            ( Animation.interrupt
-                [ Animation.to [ Animation.scale 4, Animation.translate (px 0) (px 178) ]
-                , Animation.Messenger.send <| ZoomedInReadyToTurn hash
-                ]
-                boardStyle
-            , Cmd.none
-            )
+            Task.attempt Thing <|
+                Task.map3 Double
+                    (Task.succeed hash)
+                    (Dom.getElement ("x" ++ hashToString hash))
+                    (Dom.getElement "middle12")
 
         Nothing ->
-            ( boardStyle, Cmd.none )
+            Cmd.none
+
+
+updateBoardStyle : ContainerToTranslate -> Hash -> Animation.Messenger.State Msg -> Animation.Messenger.State Msg
+updateBoardStyle (ContainerToTranslate x y) hash boardStyle =
+    Animation.interrupt
+        [ Animation.to [ Animation.translate (px x) (px y), Animation.scale 4 ]
+        , Animation.Messenger.send <| ZoomedInReadyToTurn hash
+        ]
+        boardStyle
 
 
 
@@ -206,8 +254,8 @@ view model =
     div [ class "page-container" ]
         [ div [ class "score-container" ] <| scoreView model.cards
         , div [ class "outer-board" ]
-            [ div (Animation.render model.boardStyle ++ [ class "board-container" ])
-                [ div [ class "cards" ] <| List.map cardView model.cards
+            [ div (Animation.render model.boardStyle ++ [ id "board-container", class "board-container" ])
+                [ div [ class "cards" ] <| List.indexedMap cardView model.cards
                 ]
             ]
         ]
@@ -234,24 +282,26 @@ unTurnedCountOfTeam cards team =
         |> List.length
 
 
-cardView : Card -> Html Msg
-cardView card =
+cardView : Int -> Card -> Html Msg
+cardView count card =
     case card of
         UnTurned style (Word word) (OriginallyColored team) hash ->
             div
                 [ class <| "card "
+                , id <| "middle" ++ String.fromInt count
                 ]
-                [ div (Animation.render style ++ [ class "card-inner" ])
+                [ div (Animation.render style ++ [ class "card-inner", id <| "x" ++ hashToString hash ])
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
                     , div [ class "card-back " ] []
                     ]
                 ]
 
-        Turned style (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) _ ->
+        Turned style (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) hash ->
             div
                 [ class <| "card"
+                , id <| "middle" ++ String.fromInt count
                 ]
-                [ div (Animation.render style ++ [ class "card-inner" ])
+                [ div (Animation.render style ++ [ class "card-inner", id <| "x" ++ hashToString hash ])
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
                     , div [ class <| "card-back audience-" ++ teamToString originallyColoredTeam ] [ span [ class "word" ] [ text word ] ]
                     ]
@@ -355,6 +405,10 @@ teamDecoder =
 
 type Hash
     = Hash String
+
+
+hashToString (Hash x) =
+    x
 
 
 encodeHash (Hash x) =
