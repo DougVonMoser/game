@@ -1,5 +1,8 @@
 FROM code_names_build_env
 
+ARG COMMIT=""
+LABEL commit=${COMMIT}
+
 ENV MIX_ENV=prod 
 ENV SECRET_KEY_BASE=superdupersecret 
 
@@ -18,3 +21,5 @@ RUN cd assets && \
     mix phx.digest
 
 RUN mix release first_deploy --overwrite
+
+RUN tar -cvf testing.tar /_build/prod/rel/first_deploy

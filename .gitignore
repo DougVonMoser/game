@@ -1,3 +1,5 @@
+#custom ignore for releases
+/deployables/
 # The directory Mix will write compiled artifacts to.
 /_build/
 
