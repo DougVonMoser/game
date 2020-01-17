@@ -52,10 +52,6 @@ port fromSocket : (D.Value -> msg) -> Sub msg
 -- ---------------------------
 
 
-type Double a b
-    = Double Hash a b
-
-
 type Msg
     = ReceivedCardsFromServer D.Value
     | Animate Animation.Msg
@@ -135,14 +131,6 @@ update message model =
                     ( model, Cmd.none )
 
 
-
-{-
-   instead of the Double data constructor, have that be a function that returns a ContainerToTranslate value?
-   on error kick off the turn or zoom out or whatever. just recover
-
--}
-
-
 updateBoardCmd : Hash -> Cmd Msg
 updateBoardCmd hash =
     let
@@ -186,19 +174,21 @@ manuallyTurnCardByHash cards hashToTurn =
 
 
 
--- maybe this is view?
-
-
-type BroadAnimationsForATurn
-    = ZoomInContainer Hash
-    | TurnCard Hash
-    | ZoomOutContainer
-
-
-
 -- ---------------------------
 -- VIEW
 -- ---------------------------
+
+
+view : Model -> Html Msg
+view model =
+    div [ class "page-container" ]
+        [ div [ class "score-container" ] <| scoreView model.cards
+        , div [ class "outer-board" ]
+            [ div (Animation.render model.boardStyle ++ [ id "board-container", class "board-container" ])
+                [ div [ class "cards" ] <| List.indexedMap cardView model.cards
+                ]
+            ]
+        ]
 
 
 wiggleWidIt =
@@ -231,18 +221,6 @@ getTurnt =
         ++ [ Animation.to [ Animation.rotate3d (deg 0) (deg 180) (deg 0) ]
            , Animation.Messenger.send TurnedReadyToZoomOut
            ]
-
-
-view : Model -> Html Msg
-view model =
-    div [ class "page-container" ]
-        [ div [ class "score-container" ] <| scoreView model.cards
-        , div [ class "outer-board" ]
-            [ div (Animation.render model.boardStyle ++ [ id "board-container", class "board-container" ])
-                [ div [ class "cards" ] <| List.indexedMap cardView model.cards
-                ]
-            ]
-        ]
 
 
 scoreView : List Card -> List (Html Msg)
@@ -317,6 +295,12 @@ subscriptions model =
         [ fromSocket ReceivedCardsFromServer
         , Animation.subscription Animate (List.map cardToItsStyle model.cards ++ [ model.boardStyle ])
         ]
+
+
+
+-- ---------------------------
+-- DECODERS
+-- ---------------------------
 
 
 cardsDecoder =
@@ -463,11 +447,6 @@ transferOverStyles oldCards newCards =
                         ( cards ++ [ card ], whatever )
             )
             ( [], Nothing )
-
-
-
--- TURNT!
--- THESE HAVE TO COMPLEMENT EACH OTHER
 
 
 type SpecificWiggle
