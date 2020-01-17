@@ -21,18 +21,14 @@ import Task
 
 
 type alias Model =
-    { counter : Int
-    , cards : List Card
-    , broadAnimations : List BroadAnimationsForATurn
+    { cards : List Card
     , boardStyle : Animation.Messenger.State Msg
     }
 
 
 init : Int -> ( Model, Cmd Msg )
 init flags =
-    ( { counter = flags
-      , cards = []
-      , broadAnimations = []
+    ( { cards = []
       , boardStyle = Animation.style [ Animation.scale 1, Animation.translate (px 0) (px 0) ]
       }
     , toSocket <| E.string "connect"
@@ -95,7 +91,7 @@ update message model =
                 ( updatedBoard, boardCmd ) =
                     Animation.Messenger.update animMsg model.boardStyle
             in
-            ( { model | cards = updatedCards, boardStyle = updatedBoard, broadAnimations = [] }
+            ( { model | cards = updatedCards, boardStyle = updatedBoard }
             , Cmd.batch <| boardCmd :: cardCmds
             )
 
