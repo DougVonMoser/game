@@ -65,41 +65,27 @@ type Msg
     | Animate Animation.Msg
     | ZoomedInReadyToTurn Hash
     | TurnedReadyToZoomOut
-    | Thing (Result Dom.Error (Double Dom.Element Dom.Element))
+    | FoundElementsReadyToZoomIn (Result Dom.Error ContainerToTranslate)
 
 
 type ContainerToTranslate
-    = ContainerToTranslate Float Float
+    = ContainerToTranslate Float Float Hash
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
-        Thing x ->
+        FoundElementsReadyToZoomIn x ->
             case x of
                 Err _ ->
                     ( model, Cmd.none )
 
-                Ok val ->
-                    case val of
-                        Double hash turnedElement middleElement ->
-                            let
-                                ignore2 =
-                                    middleElement.element
-
-                                ignore =
-                                    turnedElement.element
-
-                                toTranslate : ContainerToTranslate
-                                toTranslate =
-                                    ContainerToTranslate
-                                        (ignore2.x - ignore.x)
-                                        (ignore2.y - ignore.y)
-
-                                updatedBoardStyle =
-                                    updateBoardStyle toTranslate hash model.boardStyle
-                            in
-                            ( { model | boardStyle = updatedBoardStyle }, Cmd.none )
+                Ok containerToTranslate ->
+                    ( { model
+                        | boardStyle = updateBoardStyle containerToTranslate model.boardStyle
+                      }
+                    , Cmd.none
+                    )
 
         Animate animMsg ->
             let
@@ -153,17 +139,32 @@ update message model =
                     ( model, Cmd.none )
 
 
+
+{-
+   instead of the Double data constructor, have that be a function that returns a ContainerToTranslate value?
+   on error kick off the turn or zoom out or whatever. just recover
+
+-}
+
+
 updateBoardCmd : Hash -> Cmd Msg
 updateBoardCmd hash =
-    Task.attempt Thing <|
-        Task.map3 Double
+    let
+        f hash2 turnedElement middleElement =
+            ContainerToTranslate
+                (middleElement.element.x - turnedElement.element.x)
+                (middleElement.element.y - turnedElement.element.y)
+                hash2
+    in
+    Task.attempt FoundElementsReadyToZoomIn <|
+        Task.map3 f
             (Task.succeed hash)
-            (Dom.getElement (hashToIdSelector hash))
+            (Dom.getElement <| hashToIdSelectorString hash)
             (Dom.getElement "middle12")
 
 
-updateBoardStyle : ContainerToTranslate -> Hash -> Animation.Messenger.State Msg -> Animation.Messenger.State Msg
-updateBoardStyle (ContainerToTranslate x y) hash boardStyle =
+updateBoardStyle : ContainerToTranslate -> Animation.Messenger.State Msg -> Animation.Messenger.State Msg
+updateBoardStyle (ContainerToTranslate x y hash) boardStyle =
     Animation.interrupt
         [ Animation.to [ Animation.translate (px x) (px y), Animation.scale 4 ]
         , Animation.Messenger.send <| ZoomedInReadyToTurn hash
@@ -277,7 +278,7 @@ cardView count card =
                 [ class <| "card "
                 , id <| "middle" ++ String.fromInt count
                 ]
-                [ div (Animation.render style ++ [ class "card-inner", id <| hashToIdSelector hash ])
+                [ div (Animation.render style ++ [ class "card-inner", id <| hashToIdSelectorString hash ])
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
                     , div [ class "card-back " ] []
                     ]
@@ -288,7 +289,7 @@ cardView count card =
                 [ class <| "card"
                 , id <| "middle" ++ String.fromInt count
                 ]
-                [ div (Animation.render style ++ [ class "card-inner", id <| hashToIdSelector hash ])
+                [ div (Animation.render style ++ [ class "card-inner", id <| hashToIdSelectorString hash ])
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
                     , div [ class <| "card-back audience-" ++ teamToString originallyColoredTeam ] [ span [ class "word" ] [ text word ] ]
                     ]
@@ -386,10 +387,6 @@ teamDecoder =
             )
 
 
-
--- {hash: "8ae375dd-d3b0-4b44-bee2-023cb7baa517", original_color: "gray", word: "voluptate"}
-
-
 type Hash
     = Hash String
 
@@ -398,7 +395,7 @@ hashToString (Hash x) =
     x
 
 
-hashToIdSelector hash =
+hashToIdSelectorString hash =
     "x" ++ hashToString hash
 
 
