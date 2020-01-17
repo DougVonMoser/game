@@ -27,8 +27,8 @@ type Panel
     | Opened
 
 
-init : Int -> ( Model, Cmd AdminMsg )
-init flags =
+init : () -> ( Model, Cmd AdminMsg )
+init _ =
     ( { cards = []
       , panel = Unopened
       }
@@ -151,7 +151,7 @@ cardView card =
 -- ---------------------------
 
 
-main : Program Int Model AdminMsg
+main : Program () Model AdminMsg
 main =
     Browser.document
         { init = init

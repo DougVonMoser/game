@@ -6,15 +6,13 @@ require("./styles.scss");
 
 let socket = new Socket("/socket", {params: {token: window.userToken}})
 
-export default socket
-
 let app;
 const Main = require('./Main.elm');
 const Admin = require('./Admin.elm');
 if (window.location.href.includes("admin")) {
-    app = Admin.Elm.Admin.init({flags: 6});
+    app = Admin.Elm.Admin.init({});
 } else {
-    app = Main.Elm.Main.init({flags: 6});
+    app = Main.Elm.Main.init({});
 }
 
 let channel;

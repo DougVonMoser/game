@@ -26,8 +26,8 @@ type alias Model =
     }
 
 
-init : Int -> ( Model, Cmd Msg )
-init flags =
+init : () -> ( Model, Cmd Msg )
+init _ =
     ( { cards = []
       , boardStyle = Animation.style [ Animation.scale 1, Animation.translate (px 0) (px 0) ]
       }
@@ -57,7 +57,7 @@ type Double a b
 
 
 type Msg
-    = Hey D.Value
+    = ReceivedCardsFromServer D.Value
     | Animate Animation.Msg
     | ZoomedInReadyToTurn Hash
     | TurnedReadyToZoomOut
@@ -110,7 +110,7 @@ update message model =
             in
             ( { model | cards = updatedCards }, Cmd.none )
 
-        Hey x ->
+        ReceivedCardsFromServer x ->
             case D.decodeValue cardsDecoder x of
                 Ok decoded_thing ->
                     let
@@ -298,7 +298,7 @@ cardView count card =
 -- ---------------------------
 
 
-main : Program Int Model Msg
+main : Program () Model Msg
 main =
     Browser.document
         { init = init
@@ -314,7 +314,7 @@ main =
 
 subscriptions model =
     Sub.batch
-        [ fromSocket Hey
+        [ fromSocket ReceivedCardsFromServer
         , Animation.subscription Animate (List.map cardToItsStyle model.cards ++ [ model.boardStyle ])
         ]
 
