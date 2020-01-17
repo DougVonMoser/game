@@ -1,8 +1,5 @@
 FROM code_names_build_env
 
-ARG COMMIT=""
-LABEL commit=${COMMIT}
-
 ENV MIX_ENV=prod 
 ENV SECRET_KEY_BASE=superdupersecret 
 

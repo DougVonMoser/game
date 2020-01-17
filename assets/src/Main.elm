@@ -22,7 +22,6 @@ import Task
 
 type alias Model =
     { counter : Int
-    , serverMessage : String
     , cards : List Card
     , broadAnimations : List BroadAnimationsForATurn
     , boardStyle : Animation.Messenger.State Msg
@@ -32,7 +31,6 @@ type alias Model =
 init : Int -> ( Model, Cmd Msg )
 init flags =
     ( { counter = flags
-      , serverMessage = "nothing clicked yet"
       , cards = []
       , broadAnimations = []
       , boardStyle = Animation.style [ Animation.scale 1, Animation.translate (px 0) (px 0) ]
@@ -142,7 +140,12 @@ update message model =
                                 transferOverStyles model.cards decoded_thing
 
                         boardCmd =
-                            updateBoardCmd maybeHash
+                            case maybeHash of
+                                Just hash ->
+                                    updateBoardCmd hash
+
+                                Nothing ->
+                                    Cmd.none
                     in
                     ( { model | cards = updatedCards }, boardCmd )
 
@@ -150,18 +153,13 @@ update message model =
                     ( model, Cmd.none )
 
 
-updateBoardCmd : Maybe Hash -> Cmd Msg
-updateBoardCmd maybeHash =
-    case maybeHash of
-        Just hash ->
-            Task.attempt Thing <|
-                Task.map3 Double
-                    (Task.succeed hash)
-                    (Dom.getElement ("x" ++ hashToString hash))
-                    (Dom.getElement "middle12")
-
-        Nothing ->
-            Cmd.none
+updateBoardCmd : Hash -> Cmd Msg
+updateBoardCmd hash =
+    Task.attempt Thing <|
+        Task.map3 Double
+            (Task.succeed hash)
+            (Dom.getElement (hashToIdSelector hash))
+            (Dom.getElement "middle12")
 
 
 updateBoardStyle : ContainerToTranslate -> Hash -> Animation.Messenger.State Msg -> Animation.Messenger.State Msg
@@ -171,10 +169,6 @@ updateBoardStyle (ContainerToTranslate x y) hash boardStyle =
         , Animation.Messenger.send <| ZoomedInReadyToTurn hash
         ]
         boardStyle
-
-
-
---( model, Cmd.none )
 
 
 manuallyTurnCardByHash cards hashToTurn =
@@ -283,7 +277,7 @@ cardView count card =
                 [ class <| "card "
                 , id <| "middle" ++ String.fromInt count
                 ]
-                [ div (Animation.render style ++ [ class "card-inner", id <| "x" ++ hashToString hash ])
+                [ div (Animation.render style ++ [ class "card-inner", id <| hashToIdSelector hash ])
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
                     , div [ class "card-back " ] []
                     ]
@@ -294,7 +288,7 @@ cardView count card =
                 [ class <| "card"
                 , id <| "middle" ++ String.fromInt count
                 ]
-                [ div (Animation.render style ++ [ class "card-inner", id <| "x" ++ hashToString hash ])
+                [ div (Animation.render style ++ [ class "card-inner", id <| hashToIdSelector hash ])
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
                     , div [ class <| "card-back audience-" ++ teamToString originallyColoredTeam ] [ span [ class "word" ] [ text word ] ]
                     ]
@@ -402,6 +396,10 @@ type Hash
 
 hashToString (Hash x) =
     x
+
+
+hashToIdSelector hash =
+    "x" ++ hashToString hash
 
 
 encodeHash (Hash x) =
