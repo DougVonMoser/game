@@ -1,4 +1,4 @@
-port module Main exposing (..)
+port module Game exposing (..)
 
 import Animation exposing (deg, px)
 import Animation.Messenger exposing (State)

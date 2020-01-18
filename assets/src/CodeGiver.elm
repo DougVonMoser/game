@@ -1,13 +1,13 @@
-module Admin exposing (..)
+module CodeGiver exposing (..)
 
 import Browser
+import Game exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Http exposing (Error(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Main exposing (..)
 
 
 

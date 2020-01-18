@@ -7,12 +7,12 @@ require("./styles.scss");
 let socket = new Socket("/socket", {params: {token: window.userToken}})
 
 let app;
-const Main = require('./Main.elm');
-const Admin = require('./Admin.elm');
+const Game = require('./Game.elm');
+const CodeGiver = require('./CodeGiver.elm');
 if (window.location.href.includes("admin")) {
-    app = Admin.Elm.Admin.init({});
+    app = CodeGiver.Elm.CodeGiver.init({});
 } else {
-    app = Main.Elm.Main.init({});
+    app = Game.Elm.Game.init({});
 }
 
 let channel;
