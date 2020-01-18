@@ -1,18 +1,15 @@
 defmodule CodeNames.GameServer do
   use GenServer
 
-  def start_link(_) do
-    # out here self() is the caller's pid.
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  def start_link(name \\ __MODULE__) do
+    GenServer.start_link(__MODULE__, [], name: name)
   end
 
-  @impl true
   def init(_) do
     IO.inspect("I WAS INITTED")
     {:ok, Codenames.Cards.generate_new_cards_for_game()}
   end
 
-  @impl true
   def handle_call({:clicked, hash}, _from, cards) do
     IO.inspect("I WAS get clidkedkced")
 
@@ -40,16 +37,19 @@ defmodule CodeNames.GameServer do
     {:reply, new_cards, new_cards}
   end
 
-  def turn_card(hash) do
+  # all these need a topic to ask which process to reach out to
+  # be simple to keep the room/game id in sync with the genserver name
+  #
+  def turn_card(name, hash) do
     IO.inspect("I WAS turn carded")
-    GenServer.call(__MODULE__, {:clicked, hash})
+    GenServer.call(name, {:clicked, hash})
   end
 
-  def get_cards do
-    GenServer.call(__MODULE__, :get_cards)
+  def get_cards(name) do
+    GenServer.call(name, :get_cards)
   end
 
-  def restart do
-    GenServer.call(__MODULE__, :restart)
+  def restart(name) do
+    GenServer.call(name, :restart)
   end
 end

@@ -1,21 +1,14 @@
 defmodule CodeNames.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
 
   use Application
 
   def start(_type, _args) do
     # List all child processes to be supervised
-    children = [
-      # Start the Ecto repository
-      # CodeNames.Repo,
-      # Start the endpoint when the application starts
-      CodeNamesWeb.Endpoint,
-      CodeNames.GameServer
 
-      # Starts a worker by calling: CodeNames.Worker.start_link(arg)
-      # {CodeNames.Worker, arg},
+    children = [
+      CodeNamesWeb.Endpoint
+      # CodeNames.GameServer
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

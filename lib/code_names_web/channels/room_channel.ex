@@ -1,30 +1,29 @@
 defmodule CodeNamesWeb.RoomChannel do
   use Phoenix.Channel
-  # example because calculated at compile time
-  @example_cards Codenames.Cards.generate_new_cards_for_game()
 
-  alias CodeNames.Cards.Card
   alias CodeNames.GameServer
 
   def join("room:lobby", _message, socket) do
-    {:ok, GameServer.get_cards(), socket}
-  end
+    case GameServer.start_link(:lobby) do
+      {:ok, _pid} ->
+        {:ok, GameServer.get_cards(:lobby), socket}
 
-  def handle_in("new:msg", msg, socket) do
-    broadcast!(socket, "new:msg", %{user: msg["user"], body: msg["body"]})
-    {:reply, :ok}
+      {:error, {:already_started, _pid}} ->
+        {:ok, GameServer.get_cards(:lobby), socket}
+    end
   end
 
   def handle_in("clicked", msg, socket) do
+    IO.inspect(socket)
     clicked_hash = msg["body"]
 
-    updated_cards = GameServer.turn_card(clicked_hash)
+    updated_cards = GameServer.turn_card(:lobby, clicked_hash)
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
   end
 
   def handle_in("restart", _, socket) do
-    updated_cards = GameServer.restart()
+    updated_cards = GameServer.restart(:lobby)
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
   end
