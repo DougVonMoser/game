@@ -26,11 +26,15 @@ type alias Model =
     }
 
 
+initModel =
+    { cards = []
+    , boardStyle = Animation.style [ Animation.scale 1, Animation.translate (px 0) (px 0) ]
+    }
+
+
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { cards = []
-      , boardStyle = Animation.style [ Animation.scale 1, Animation.translate (px 0) (px 0) ]
-      }
+    ( initModel
     , toSocket <| E.string "connect"
     )
 
@@ -107,28 +111,32 @@ update message model =
             ( { model | cards = updatedCards }, Cmd.none )
 
         ReceivedCardsFromServer x ->
-            case D.decodeValue cardsDecoder x of
-                Ok decoded_thing ->
-                    let
-                        ( updatedCards, maybeHash ) =
-                            if model.cards == [] then
-                                ( decoded_thing, Nothing )
+            decodeCardsFromServer model x
 
-                            else
-                                transferOverStyles model.cards decoded_thing
 
-                        boardCmd =
-                            case maybeHash of
-                                Just hash ->
-                                    updateBoardCmd hash
+decodeCardsFromServer model x =
+    case D.decodeValue cardsDecoder x of
+        Ok decoded_thing ->
+            let
+                ( updatedCards, maybeHash ) =
+                    if model.cards == [] then
+                        ( decoded_thing, Nothing )
 
-                                Nothing ->
-                                    Cmd.none
-                    in
-                    ( { model | cards = updatedCards }, boardCmd )
+                    else
+                        transferOverStyles model.cards decoded_thing
 
-                Err e ->
-                    ( model, Cmd.none )
+                boardCmd =
+                    case maybeHash of
+                        Just hash ->
+                            updateBoardCmd hash
+
+                        Nothing ->
+                            Cmd.none
+            in
+            ( { model | cards = updatedCards }, boardCmd )
+
+        Err e ->
+            ( model, Cmd.none )
 
 
 updateBoardCmd : Hash -> Cmd Msg

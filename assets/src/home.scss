@@ -1,0 +1,23 @@
+.home-container {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+
+
+    .centered-prompt {
+        background-color: orange;
+    }
+    .join {
+        display: flex;
+        flex-direction: column;
+        .join-button {
+
+        }
+        
+    }
+    .create{
+        margin-top: 56px;
+    }
+
+}
