@@ -29,6 +29,7 @@ defmodule CodeNamesWeb.RoomChannel do
     clicked_hash = msg["body"]
 
     updated_cards = GameServer.turn_card(:ABCD, clicked_hash)
+    IO.inspect("broadcasting!")
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
   end

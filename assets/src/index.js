@@ -21,11 +21,6 @@ channel.join()
   })
   .receive("error", resp => { console.log("Unable to join", resp) })
 
-channel.on("updateFromServer", msg => {
-    console.log("updateFromServer got ")
-    console.log(msg.cards)
-    app.ports.fromSocket.send(msg.cards)
-})
 
 channel.on("channelReplyingWithNewGameStarting", msg => {
     console.log("channel replying with new game starting ")
@@ -37,6 +32,11 @@ channel.on("channelReplyingWithNewGameStarting", msg => {
         console.log(resp)
         app.ports.fromSocket.send(resp)
     })   
+    channel.on("updateFromServer", msg => {
+        console.log("updateFromServer got ")
+        console.log(msg.cards)
+        app.ports.fromSocket.send(msg.cards)
+    })
 })
 
 
@@ -50,14 +50,8 @@ app.ports.alsoToSocket.subscribe(message => {
 
 
 app.ports.toSocket.subscribe(message => {
-    console.log("trying to do stuff")
-    if (message == "elmSaysCreateNewRoom"){
-        channel.push("elmSaysCreateNewRoom", {})
-    } else {
-        // assume its a clicked card for now :)
-        channel.push("clicked", {body: message})
-        
-    }
+    console.log("trying to do create new room")
+    channel.push("elmSaysCreateNewRoom", {})
     
 })
 

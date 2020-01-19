@@ -33,6 +33,7 @@ type Msg
     | UserClickedCreateNewGame
     | UserClickedImAnAdmin
     | GotCodeGiverMsg CodeGiver.AdminMsg
+    | GotGameMsg Game.Msg
     | NOOP
 
 
@@ -71,6 +72,18 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        GotGameMsg msgGAME ->
+            case model of
+                InGame modelGAME ->
+                    let
+                        ( newModelGAME, newCmdGAME ) =
+                            Game.update msgGAME modelGAME
+                    in
+                    ( InGame newModelGAME, Cmd.map GotGameMsg newCmdGAME )
+
+                _ ->
+                    ( model, Cmd.none )
+
 
 view model =
     div []
@@ -105,7 +118,7 @@ bodyView model =
             Html.map GotCodeGiverMsg <| CodeGiver.view codeGiverModel
 
         InGame gameModel ->
-            Html.map (always UserClickedCreateNewGame) <| Game.view gameModel
+            Html.map GotGameMsg <| Game.view gameModel
 
 
 main : Program () Model Msg
@@ -122,11 +135,29 @@ main =
         }
 
 
-socketHandler : D.Value -> Msg
-socketHandler rawCards =
-    ServerSentData rawCards
+socketHandler : Model -> D.Value -> Msg
+socketHandler model rawCards =
+    case model of
+        InCodeGiver _ ->
+            GotCodeGiverMsg (CodeGiver.Hey rawCards)
+
+        InGame _ ->
+            GotGameMsg (Game.ReceivedCardsFromServer rawCards)
+
+        ChoosingHowToStartGame ->
+            ServerSentData rawCards
 
 
 subscriptions model =
-    Sub.batch
-        [ fromSocket socketHandler ]
+    case model of
+        ChoosingHowToStartGame ->
+            fromSocket (socketHandler model)
+
+        InGame gameModel ->
+            Sub.batch
+                [ fromSocket (socketHandler model)
+                , Sub.map GotGameMsg (Game.subscriptions gameModel)
+                ]
+
+        _ ->
+            fromSocket (socketHandler model)
