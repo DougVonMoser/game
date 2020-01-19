@@ -40,6 +40,15 @@ channel.on("channelReplyingWithNewGameStarting", msg => {
 })
 
 
+app.ports.alsoToSocket.subscribe(message => {
+    console.log("also trying to do stuff")
+    // assume its a clicked card for now :)
+    channel.push("clicked", {body: message})
+        
+    
+})
+
+
 app.ports.toSocket.subscribe(message => {
     console.log("trying to do stuff")
     if (message == "elmSaysCreateNewRoom"){

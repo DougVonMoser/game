@@ -1,4 +1,4 @@
-module CodeGiver exposing (..)
+port module CodeGiver exposing (..)
 
 import Browser
 import Game exposing (..)
@@ -8,6 +8,9 @@ import Html.Events exposing (onClick)
 import Http exposing (Error(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+
+
+port alsoToSocket : Encode.Value -> Cmd msg
 
 
 
@@ -50,6 +53,7 @@ update message model =
     case message of
         TriggerRestart ->
             --( model, toSocket <| Encode.string "restart" )
+            --( model, alsoToSocket <| Encode.string "restart" )
             ( model, Cmd.none )
 
         Clicked hash ->
@@ -100,7 +104,7 @@ handleClickUpdate clickedHash model =
     in
     ( { model | cards = updatedCards }
       --, toSocket (encodeHash clickedHash)
-    , Cmd.none
+    , alsoToSocket (encodeHash clickedHash)
     )
 
 

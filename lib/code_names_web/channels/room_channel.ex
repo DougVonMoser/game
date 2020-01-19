@@ -8,7 +8,7 @@ defmodule CodeNamesWeb.RoomChannel do
   end
 
   def join("room:" <> game_room, _message, socket) do
-    game_room = String.to_atom(game_room)
+    game_room = String.to_atom(game_room) |> IO.inspect(label: "this is the game_rrom name atom")
 
     case GameServer.start_link(game_room) do
       {:ok, _pid} ->
@@ -28,13 +28,13 @@ defmodule CodeNamesWeb.RoomChannel do
     IO.inspect(socket)
     clicked_hash = msg["body"]
 
-    updated_cards = GameServer.turn_card(:lobby, clicked_hash)
+    updated_cards = GameServer.turn_card(:ABCD, clicked_hash)
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
   end
 
   def handle_in("restart", _, socket) do
-    updated_cards = GameServer.restart(:lobby)
+    updated_cards = GameServer.restart(:ABCD)
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
   end
