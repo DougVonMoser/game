@@ -2,6 +2,7 @@ port module Main exposing (..)
 
 import Browser
 import Browser.Dom as Dom
+import CodeGiver
 import Game
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -20,6 +21,7 @@ port fromSocket : (D.Value -> msg) -> Sub msg
 type Model
     = ChoosingHowToStartGame
     | InGame Game.Model
+    | InCodeGiver CodeGiver.Model
 
 
 init _ =
@@ -29,6 +31,7 @@ init _ =
 type Msg
     = ServerSentData D.Value
     | UserClickedCreateNewGame
+    | UserClickedImAnAdmin
     | NOOP
 
 
@@ -36,6 +39,14 @@ update msg model =
     case msg of
         NOOP ->
             ( model, Cmd.none )
+
+        UserClickedImAnAdmin ->
+            case model of
+                InGame gameModel ->
+                    ( InCodeGiver { cards = gameModel.cards }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
         ServerSentData x ->
             let
@@ -49,6 +60,19 @@ update msg model =
 
 
 view model =
+    div []
+        [ toolbarView model
+        , bodyView model
+        ]
+
+
+toolbarView model =
+    div []
+        [ button [ onClick UserClickedImAnAdmin ] [ text "im actually an admin" ]
+        ]
+
+
+bodyView model =
     case model of
         ChoosingHowToStartGame ->
             div [ class "home-container" ]
@@ -63,6 +87,9 @@ view model =
                         ]
                     ]
                 ]
+
+        InCodeGiver codeGiverModel ->
+            Html.map (always UserClickedCreateNewGame) <| CodeGiver.view codeGiverModel
 
         InGame gameModel ->
             Html.map (always UserClickedCreateNewGame) <| Game.view gameModel

@@ -18,20 +18,17 @@ import Json.Encode as Encode exposing (Value)
 
 type alias Model =
     { cards : List Card
-    , panel : Panel
     }
 
 
-type Panel
-    = Unopened
-    | Opened
+initialCodeGiverModel =
+    { cards = []
+    }
 
 
 init : () -> ( Model, Cmd AdminMsg )
 init _ =
-    ( { cards = []
-      , panel = Unopened
-      }
+    ( initialCodeGiverModel
     , toSocket <| Encode.string "connect"
     )
 
@@ -45,8 +42,6 @@ init _ =
 type AdminMsg
     = Clicked Hash
     | Hey Decode.Value
-    | ShowPanel
-    | HidePanel
     | TriggerRestart
 
 
@@ -56,30 +51,28 @@ update message model =
         TriggerRestart ->
             ( model, toSocket <| Encode.string "restart" )
 
-        ShowPanel ->
-            ( { model | panel = Opened }, Cmd.none )
-
-        HidePanel ->
-            ( { model | panel = Unopened }, Cmd.none )
-
         Clicked hash ->
             handleClickUpdate hash model
 
         Hey x ->
-            case Decode.decodeValue cardsDecoder x of
-                Ok decoded_thing ->
-                    let
-                        ( updatedCards, _ ) =
-                            if model.cards == [] then
-                                ( decoded_thing, Nothing )
+            codeGiverDecodeCardsFromServer model x
 
-                            else
-                                transferOverStyles model.cards decoded_thing
-                    in
-                    ( { model | cards = updatedCards }, Cmd.none )
 
-                Err e ->
-                    ( model, Cmd.none )
+codeGiverDecodeCardsFromServer model x =
+    case Decode.decodeValue cardsDecoder x of
+        Ok decoded_thing ->
+            let
+                ( updatedCards, _ ) =
+                    if model.cards == [] then
+                        ( decoded_thing, Nothing )
+
+                    else
+                        transferOverStyles model.cards decoded_thing
+            in
+            ( { model | cards = updatedCards }, Cmd.none )
+
+        Err e ->
+            ( model, Cmd.none )
 
 
 turnOverCard turningOverTeam card =
