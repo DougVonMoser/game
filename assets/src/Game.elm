@@ -1,4 +1,4 @@
-port module Game exposing (..)
+module Game exposing (..)
 
 import Animation exposing (deg, px)
 import Animation.Messenger exposing (State)
@@ -35,19 +35,13 @@ initModel =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( initModel
-    , toSocket <| E.string "connect"
+    , Cmd.none
     )
 
 
 type Card
     = UnTurned (State Msg) Word OriginallyColored Hash
     | Turned (State Msg) Word TurnedOverBy OriginallyColored Hash
-
-
-port toSocket : E.Value -> Cmd msg
-
-
-port fromSocket : (D.Value -> msg) -> Sub msg
 
 
 
@@ -300,8 +294,7 @@ main =
 
 subscriptions model =
     Sub.batch
-        [ fromSocket ReceivedCardsFromServer
-        , Animation.subscription Animate (List.map cardToItsStyle model.cards ++ [ model.boardStyle ])
+        [ Animation.subscription Animate (List.map cardToItsStyle model.cards ++ [ model.boardStyle ])
         ]
 
 

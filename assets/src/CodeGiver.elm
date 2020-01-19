@@ -29,7 +29,7 @@ initialCodeGiverModel =
 init : () -> ( Model, Cmd AdminMsg )
 init _ =
     ( initialCodeGiverModel
-    , toSocket <| Encode.string "connect"
+    , Cmd.none
     )
 
 
@@ -49,7 +49,8 @@ update : AdminMsg -> Model -> ( Model, Cmd AdminMsg )
 update message model =
     case message of
         TriggerRestart ->
-            ( model, toSocket <| Encode.string "restart" )
+            --( model, toSocket <| Encode.string "restart" )
+            ( model, Cmd.none )
 
         Clicked hash ->
             handleClickUpdate hash model
@@ -98,7 +99,8 @@ handleClickUpdate clickedHash model =
                 model.cards
     in
     ( { model | cards = updatedCards }
-    , toSocket (encodeHash clickedHash)
+      --, toSocket (encodeHash clickedHash)
+    , Cmd.none
     )
 
 
@@ -154,5 +156,5 @@ main =
                 { title = "ADMIN"
                 , body = [ view m ]
                 }
-        , subscriptions = \_ -> fromSocket Hey
+        , subscriptions = always Sub.none
         }

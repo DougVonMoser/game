@@ -32,6 +32,7 @@ type Msg
     = ServerSentData D.Value
     | UserClickedCreateNewGame
     | UserClickedImAnAdmin
+    | GotCodeGiverMsg CodeGiver.AdminMsg
     | NOOP
 
 
@@ -57,6 +58,18 @@ update msg model =
 
         UserClickedCreateNewGame ->
             ( ChoosingHowToStartGame, toSocket <| E.string "elmSaysCreateNewRoom" )
+
+        GotCodeGiverMsg msgCG ->
+            case model of
+                InCodeGiver modelCG ->
+                    let
+                        ( newModelCG, newCmdCG ) =
+                            CodeGiver.update msgCG modelCG
+                    in
+                    ( InCodeGiver newModelCG, Cmd.map GotCodeGiverMsg newCmdCG )
+
+                _ ->
+                    ( model, Cmd.none )
 
 
 view model =
@@ -89,7 +102,7 @@ bodyView model =
                 ]
 
         InCodeGiver codeGiverModel ->
-            Html.map (always UserClickedCreateNewGame) <| CodeGiver.view codeGiverModel
+            Html.map GotCodeGiverMsg <| CodeGiver.view codeGiverModel
 
         InGame gameModel ->
             Html.map (always UserClickedCreateNewGame) <| Game.view gameModel
