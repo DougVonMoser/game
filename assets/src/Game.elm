@@ -92,7 +92,7 @@ update message model =
         TurnedReadyToZoomOut ->
             let
                 updatedBoardStyle =
-                    Animation.interrupt [ Animation.to [ Animation.scale 1, Animation.translate (px 0) (px 0) ] ]
+                    Animation.queue [ Animation.to [ Animation.scale 1, Animation.translate (px 0) (px 0) ] ]
                         model.boardStyle
             in
             ( { model | boardStyle = updatedBoardStyle }, Cmd.none )
@@ -151,7 +151,7 @@ updateBoardCmd hash =
 
 updateBoardStyle : ContainerToTranslate -> Animation.Messenger.State Msg -> Animation.Messenger.State Msg
 updateBoardStyle (ContainerToTranslate x y hash) boardStyle =
-    Animation.interrupt
+    Animation.queue
         [ Animation.to [ Animation.translate (px x) (px y), Animation.scale 4 ]
         , Animation.Messenger.send <| ZoomedInReadyToTurn hash
         ]
@@ -164,10 +164,10 @@ manuallyTurnCardByHash cards hashToTurn =
             if cardMatchesHash card hashToTurn then
                 case card of
                     UnTurned style word oc hash ->
-                        Turned (Animation.interrupt getTurnt style) word (TurnedOverBy Red) oc hash
+                        Turned (Animation.queue getTurnt style) word (TurnedOverBy Red) oc hash
 
                     Turned style word turnedOverBy oc hash ->
-                        Turned (Animation.interrupt getTurnt style) word (TurnedOverBy Red) oc hash
+                        Turned (Animation.queue getTurnt style) word (TurnedOverBy Red) oc hash
 
             else
                 card
