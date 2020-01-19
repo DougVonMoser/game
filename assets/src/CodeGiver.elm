@@ -57,7 +57,9 @@ update message model =
             ( model, Cmd.none )
 
         Clicked hash ->
-            handleClickUpdate hash model
+            ( model
+            , alsoToSocket (encodeHash hash)
+            )
 
         Hey x ->
             codeGiverDecodeCardsFromServer model x
