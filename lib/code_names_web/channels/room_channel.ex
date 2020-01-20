@@ -10,16 +10,20 @@ defmodule CodeNamesWeb.RoomChannel do
   def join("room:" <> game_room, _message, socket) do
     game_room = String.to_atom(game_room) |> IO.inspect(label: "this is the game_rrom name atom")
 
-    case GameServer.start_link(game_room) do
+    # case GameServer.start_link(game_room) do
+    case GenServer.start(CodeNames.GameServer, [], name: game_room) do
       {:ok, _pid} ->
+        IO.inspect("started new Genserver #{inspect(game_room)}")
         {:ok, GameServer.get_cards(game_room), socket}
 
       {:error, {:already_started, _pid}} ->
+        IO.inspect("already started Genserver #{inspect(game_room)}")
         {:ok, GameServer.get_cards(game_room), socket}
     end
   end
 
   def handle_in("elmSaysCreateNewRoom", _msg, socket) do
+    IO.inspect("elmSaysCreateNewRoom")
     push(socket, "channelReplyingWithNewGameStarting", %{room: "ABCD"})
     {:noreply, socket}
   end

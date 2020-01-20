@@ -46,6 +46,7 @@ defmodule CodeNames.GameServer do
   end
 
   def get_cards(name) do
+    IO.inspect(name, label: "Genserver.call namey")
     GenServer.call(name, :get_cards)
   end
 

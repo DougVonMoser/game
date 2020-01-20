@@ -32,6 +32,7 @@ type Msg
     = ServerSentData D.Value
     | UserClickedCreateNewGame
     | UserClickedImAnAdmin
+    | UserClickedImInTheWrongGame
     | GotCodeGiverMsg CodeGiver.AdminMsg
     | GotGameMsg Game.Msg
     | NOOP
@@ -41,6 +42,12 @@ update msg model =
     case msg of
         NOOP ->
             ( model, Cmd.none )
+
+        UserClickedImInTheWrongGame ->
+            case model of
+                _ ->
+                    -- NEED TO JOIN ROOM:LOBBY HERE
+                    ( ChoosingHowToStartGame, Cmd.none )
 
         UserClickedImAnAdmin ->
             case model of
@@ -95,6 +102,7 @@ view model =
 toolbarView model =
     div []
         [ button [ onClick UserClickedImAnAdmin ] [ text "im actually an admin" ]
+        , button [ onClick UserClickedImInTheWrongGame ] [ text "im in the wrong game" ]
         ]
 
 

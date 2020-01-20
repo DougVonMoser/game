@@ -10,19 +10,26 @@ socket.connect()
 const Main = require('./Main.elm');
 let app = Main.Elm.Main.init({});
 
-let channel = socket.channel("room:lobby", {});
 
+let channel = socket.channel("room:lobby", {});
 channel.join()
   .receive("ok", resp => {
-        console.log("just joined, got from server")
+        console.log("just joined lobby, got from server")
         console.log(resp)
-        // this is just a hello message for now
-        //app.ports.fromSocket.send(resp)
   })
-  .receive("error", resp => { console.log("Unable to join", resp) })
 
+function joinLobby (channel) {
+    console.log("joinLobby function")
+    channel = socket.channel("room:lobby", {});
+    channel.join()
+      .receive("ok", resp => {
+            console.log("just joined lobby, got from server")
+            console.log(resp)
+      })
+      .receive("error", resp => { console.log("Unable to join", resp) })
+}
 
-channel.on("channelReplyingWithNewGameStarting", msg => {
+function joinGameRoom (channel, msg) {
     console.log("channel replying with new game starting ")
     console.log(msg)
     channel = socket.channel("room:" + msg.room)
@@ -37,23 +44,23 @@ channel.on("channelReplyingWithNewGameStarting", msg => {
         console.log(msg.cards)
         app.ports.fromSocket.send(msg.cards)
     })
+}
+
+channel.on("channelReplyingWithNewGameStarting", msg => {
+    console.log("channelReplyingWithNewGameStarting")
+    joinGameRoom(channel, msg)
 })
 
 
 app.ports.alsoToSocket.subscribe(message => {
-    console.log("also trying to do stuff")
-    // assume its a clicked card for now :)
+    console.log("sending the click and hash to server")
     channel.push("clicked", {body: message})
-        
-    
 })
 
 
 app.ports.toSocket.subscribe(message => {
     console.log("trying to do create new room")
     channel.push("elmSaysCreateNewRoom", {})
-    
 })
 
 //channel.push("restart", {})
-//channel.push("clicked", {body: message})
