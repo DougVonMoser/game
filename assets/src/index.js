@@ -17,8 +17,22 @@ channel.join()
         console.log("just joined lobby, got from server")
         console.log(resp)
   })
+reListenForUpdates()
 
-function joinLobby (channel) {
+function reListenForUpdates () {
+    channel.on("updateFromServer", msg => {
+        console.log("updateFromServer got ")
+        console.log(msg.cards)
+        app.ports.fromSocket.send(msg.cards)
+    })
+    channel.on("channelReplyingWithNewGameStarting", msg => {
+        console.log("channelReplyingWithNewGameStarting")
+        joinGameRoom(msg)
+    })
+
+}
+
+function joinLobby () {
     console.log("joinLobby function")
     channel = socket.channel("room:lobby", {});
     channel.join()
@@ -27,9 +41,10 @@ function joinLobby (channel) {
             console.log(resp)
       })
       .receive("error", resp => { console.log("Unable to join", resp) })
+    reListenForUpdates()
 }
 
-function joinGameRoom (channel, msg) {
+function joinGameRoom (msg) {
     console.log("channel replying with new game starting ")
     console.log(msg)
     channel = socket.channel("room:" + msg.room)
@@ -39,16 +54,12 @@ function joinGameRoom (channel, msg) {
         console.log(resp)
         app.ports.fromSocket.send(resp)
     })   
-    channel.on("updateFromServer", msg => {
-        console.log("updateFromServer got ")
-        console.log(msg.cards)
-        app.ports.fromSocket.send(msg.cards)
-    })
+    reListenForUpdates()
 }
 
-channel.on("channelReplyingWithNewGameStarting", msg => {
-    console.log("channelReplyingWithNewGameStarting")
-    joinGameRoom(channel, msg)
+app.ports.joinLobby.subscribe(message => {
+    console.log("joining the lobby again")
+    joinLobby()
 })
 
 

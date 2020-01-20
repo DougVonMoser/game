@@ -15,6 +15,9 @@ import Json.Encode as E exposing (Value)
 port toSocket : E.Value -> Cmd msg
 
 
+port joinLobby : E.Value -> Cmd msg
+
+
 port fromSocket : (D.Value -> msg) -> Sub msg
 
 
@@ -47,7 +50,7 @@ update msg model =
             case model of
                 _ ->
                     -- NEED TO JOIN ROOM:LOBBY HERE
-                    ( ChoosingHowToStartGame, Cmd.none )
+                    ( ChoosingHowToStartGame, joinLobby <| E.string "joindatlobby" )
 
         UserClickedImAnAdmin ->
             case model of

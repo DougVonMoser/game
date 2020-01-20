@@ -24,6 +24,7 @@ defmodule CodeNamesWeb.RoomChannel do
 
   def handle_in("elmSaysCreateNewRoom", _msg, socket) do
     IO.inspect("elmSaysCreateNewRoom")
+    IO.inspect(socket)
     push(socket, "channelReplyingWithNewGameStarting", %{room: "ABCD"})
     {:noreply, socket}
   end
