@@ -52,8 +52,8 @@ function joinGameRoom (msg) {
    .receive("ok", resp => {
         console.log("successfully joined new channel, got from server")
         console.log(resp)
-        app.ports.fromSocket.send(resp)
         app.ports.joinedDifferentRoom.send({room : msg.room})
+        app.ports.fromSocket.send(resp)
     })   
     reListenForUpdates()
 }

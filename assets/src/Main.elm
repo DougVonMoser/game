@@ -71,12 +71,16 @@ update msg model =
                     ( model, Cmd.none )
 
         ServerSentData x ->
-            -- TODO: this msg handlening should be consolidated
-            let
-                ( gameModel, cmd ) =
-                    Game.decodeCardsFromServer Game.initModel x
-            in
-            ( InGame (Room "FAKE") gameModel, Cmd.map (always NOOP) cmd )
+            case model of
+                ChoosingHowToStartGame (Just room) ->
+                    let
+                        ( gameModel, cmd ) =
+                            Game.decodeCardsFromServer Game.initModel x
+                    in
+                    ( InGame room gameModel, Cmd.map (always NOOP) cmd )
+
+                _ ->
+                    ( model, Cmd.none )
 
         UserClickedCreateNewGame ->
             ( ChoosingHowToStartGame Nothing, toSocket <| E.string "elmSaysCreateNewRoom" )
@@ -114,11 +118,24 @@ view model =
 
 
 toolbarView model =
-    div []
-        [ button [ onClick UserClickedImAnAdmin ] [ text "uhm im actually a codegiver" ]
-        , button [ onClick UserClickedImInTheWrongGame ] [ text "uhm im in the wrong game" ]
-        , span [] [ text "room name goes here" ]
-        ]
+    let
+        listOfButtons =
+            case model of
+                ChoosingHowToStartGame _ ->
+                    []
+
+                InGame (Room room) _ ->
+                    [ button [ onClick UserClickedImAnAdmin ] [ text "uhm im actually a codegiver" ]
+                    , button [ onClick UserClickedImInTheWrongGame ] [ text "uhm im in the wrong game" ]
+                    , span [] [ text <| "in room " ++ room ]
+                    ]
+
+                InCodeGiver (Room room) _ ->
+                    [ button [ onClick UserClickedImInTheWrongGame ] [ text "uhm im in the wrong game" ]
+                    , span [] [ text <| "in room " ++ room ]
+                    ]
+    in
+    div [] listOfButtons
 
 
 bodyView model =
