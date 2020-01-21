@@ -10,7 +10,6 @@ defmodule CodeNamesWeb.RoomChannel do
   def join("room:" <> game_room, _message, socket) do
     game_room = String.to_atom(game_room) |> IO.inspect(label: "this is the game_rrom name atom")
 
-    # case GameServer.start_link(game_room) do
     case GenServer.start(CodeNames.GameServer, [], name: game_room) do
       {:ok, _pid} ->
         IO.inspect("started new Genserver #{inspect(game_room)}")

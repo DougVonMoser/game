@@ -21,14 +21,21 @@ port joinLobby : E.Value -> Cmd msg
 port fromSocket : (D.Value -> msg) -> Sub msg
 
 
+port joinedDifferentRoom : (D.Value -> msg) -> Sub msg
+
+
 type Model
-    = ChoosingHowToStartGame
-    | InGame Game.Model
-    | InCodeGiver CodeGiver.Model
+    = ChoosingHowToStartGame (Maybe Room)
+    | InGame Room Game.Model
+    | InCodeGiver Room CodeGiver.Model
 
 
 init _ =
-    ( ChoosingHowToStartGame, Cmd.none )
+    ( ChoosingHowToStartGame Nothing, Cmd.none )
+
+
+type Room
+    = Room String
 
 
 type Msg
@@ -38,6 +45,7 @@ type Msg
     | UserClickedImInTheWrongGame
     | GotCodeGiverMsg CodeGiver.AdminMsg
     | GotGameMsg Game.Msg
+    | JoinedDifferentRoom Room
     | NOOP
 
 
@@ -46,50 +54,53 @@ update msg model =
         NOOP ->
             ( model, Cmd.none )
 
+        JoinedDifferentRoom room ->
+            ( ChoosingHowToStartGame <| Just room, Cmd.none )
+
         UserClickedImInTheWrongGame ->
             case model of
                 _ ->
-                    -- NEED TO JOIN ROOM:LOBBY HERE
-                    ( ChoosingHowToStartGame, joinLobby <| E.string "joindatlobby" )
+                    ( ChoosingHowToStartGame Nothing, joinLobby <| E.string "joindatlobby" )
 
         UserClickedImAnAdmin ->
             case model of
-                InGame gameModel ->
-                    ( InCodeGiver { cards = gameModel.cards }, Cmd.none )
+                InGame room gameModel ->
+                    ( InCodeGiver room { cards = gameModel.cards }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
         ServerSentData x ->
+            -- TODO: this msg handlening should be consolidated
             let
                 ( gameModel, cmd ) =
                     Game.decodeCardsFromServer Game.initModel x
             in
-            ( InGame gameModel, Cmd.map (always NOOP) cmd )
+            ( InGame (Room "FAKE") gameModel, Cmd.map (always NOOP) cmd )
 
         UserClickedCreateNewGame ->
-            ( ChoosingHowToStartGame, toSocket <| E.string "elmSaysCreateNewRoom" )
+            ( ChoosingHowToStartGame Nothing, toSocket <| E.string "elmSaysCreateNewRoom" )
 
         GotCodeGiverMsg msgCG ->
             case model of
-                InCodeGiver modelCG ->
+                InCodeGiver room modelCG ->
                     let
                         ( newModelCG, newCmdCG ) =
                             CodeGiver.update msgCG modelCG
                     in
-                    ( InCodeGiver newModelCG, Cmd.map GotCodeGiverMsg newCmdCG )
+                    ( InCodeGiver room newModelCG, Cmd.map GotCodeGiverMsg newCmdCG )
 
                 _ ->
                     ( model, Cmd.none )
 
         GotGameMsg msgGAME ->
             case model of
-                InGame modelGAME ->
+                InGame room modelGAME ->
                     let
                         ( newModelGAME, newCmdGAME ) =
                             Game.update msgGAME modelGAME
                     in
-                    ( InGame newModelGAME, Cmd.map GotGameMsg newCmdGAME )
+                    ( InGame room newModelGAME, Cmd.map GotGameMsg newCmdGAME )
 
                 _ ->
                     ( model, Cmd.none )
@@ -104,14 +115,15 @@ view model =
 
 toolbarView model =
     div []
-        [ button [ onClick UserClickedImAnAdmin ] [ text "im actually an admin" ]
-        , button [ onClick UserClickedImInTheWrongGame ] [ text "im in the wrong game" ]
+        [ button [ onClick UserClickedImAnAdmin ] [ text "uhm im actually a codegiver" ]
+        , button [ onClick UserClickedImInTheWrongGame ] [ text "uhm im in the wrong game" ]
+        , span [] [ text "room name goes here" ]
         ]
 
 
 bodyView model =
     case model of
-        ChoosingHowToStartGame ->
+        ChoosingHowToStartGame maybeRoom ->
             div [ class "home-container" ]
                 [ div [ class "centered-prompt" ]
                     [ div [ class "join" ]
@@ -125,10 +137,10 @@ bodyView model =
                     ]
                 ]
 
-        InCodeGiver codeGiverModel ->
+        InCodeGiver _ codeGiverModel ->
             Html.map GotCodeGiverMsg <| CodeGiver.view codeGiverModel
 
-        InGame gameModel ->
+        InGame _ gameModel ->
             Html.map GotGameMsg <| Game.view gameModel
 
 
@@ -149,26 +161,41 @@ main =
 socketHandler : Model -> D.Value -> Msg
 socketHandler model rawCards =
     case model of
-        InCodeGiver _ ->
+        InCodeGiver _ _ ->
             GotCodeGiverMsg (CodeGiver.Hey rawCards)
 
-        InGame _ ->
+        InGame _ _ ->
             GotGameMsg (Game.ReceivedCardsFromServer rawCards)
 
-        ChoosingHowToStartGame ->
+        ChoosingHowToStartGame _ ->
             ServerSentData rawCards
 
 
-subscriptions model =
-    case model of
-        ChoosingHowToStartGame ->
-            fromSocket (socketHandler model)
+roomDecoding raw =
+    case D.decodeValue (D.map Room (D.field "room" D.string)) raw of
+        Ok val ->
+            JoinedDifferentRoom val
 
-        InGame gameModel ->
-            Sub.batch
-                [ fromSocket (socketHandler model)
-                , Sub.map GotGameMsg (Game.subscriptions gameModel)
-                ]
+        Err _ ->
+            JoinedDifferentRoom <| Room "ERROR"
+
+
+subscriptions model =
+    let
+        sockets =
+            [ fromSocket (socketHandler model)
+            , joinedDifferentRoom roomDecoding
+            ]
+    in
+    case model of
+        ChoosingHowToStartGame _ ->
+            Sub.batch sockets
+
+        InGame _ gameModel ->
+            Sub.batch <|
+                sockets
+                    ++ [ Sub.map GotGameMsg (Game.subscriptions gameModel)
+                       ]
 
         _ ->
-            fromSocket (socketHandler model)
+            Sub.batch sockets
