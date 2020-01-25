@@ -43,15 +43,19 @@ defmodule CodeNamesWeb.RoomChannel do
   def handle_in("elmSaysCreateNewRoom", _msg, socket) do
     IO.inspect("elmSaysCreateNewRoom")
     IO.inspect(socket)
-    push(socket, "channelReplyingWithNewGameStarting", %{room: "ABCD"})
+    new_room = generate_new_random_room()
+    push(socket, "channelReplyingWithNewGameStarting", %{room: new_room})
+
     {:noreply, socket}
   end
 
   def handle_in("clicked", msg, socket) do
     IO.inspect(socket)
     clicked_hash = msg["body"]
+    "room:" <> room = socket.topic
+    room = room |> String.upcase() |> String.to_existing_atom()
 
-    updated_cards = GameServer.turn_card(:ABCD, clicked_hash)
+    updated_cards = GameServer.turn_card(room, clicked_hash)
     IO.inspect("broadcasting!")
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
@@ -61,5 +65,11 @@ defmodule CodeNamesWeb.RoomChannel do
     updated_cards = GameServer.restart(:ABCD)
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
+  end
+
+  defp generate_new_random_room() do
+    random_new_room = for n <- ?A..?Z, do: <<n::utf8>>
+
+    random_new_room |> Enum.shuffle() |> Enum.take(4) |> List.to_string()
   end
 end
