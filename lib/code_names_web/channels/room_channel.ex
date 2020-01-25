@@ -62,7 +62,10 @@ defmodule CodeNamesWeb.RoomChannel do
   end
 
   def handle_in("restart", _, socket) do
-    updated_cards = GameServer.restart(:ABCD)
+    "room:" <> room = socket.topic
+    room = room |> String.upcase() |> String.to_existing_atom()
+
+    updated_cards = GameServer.restart(room)
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
   end
