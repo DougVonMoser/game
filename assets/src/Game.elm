@@ -184,8 +184,8 @@ manuallyTurnCardByHash cards hashToTurn =
 view : Model -> Html Msg
 view model =
     div [ class "page-container" ]
-        [ div [ class "score-container" ] <| scoreView model.cards
-        , div [ class "outer-board" ]
+        [ -- div [ class "score-container" ] <| scoreView model.cards,
+          div [ class "outer-board" ]
             [ div (Animation.render model.boardStyle ++ [ id "board-container", class "board-container" ])
                 [ div [ class "cards" ] <| List.indexedMap cardView model.cards
                 ]

@@ -171,15 +171,13 @@ bodyView model =
     case model of
         ChoosingHowToStartGame maybeRoom roomTypings ->
             div [ class "home-container" ]
-                [ div [ class "centered-prompt" ]
-                    [ div [ class "join!" ]
-                        [ h1 [] [ text "Game Code" ]
-                        , input [ onInput UserTypedRoomToEnter ] []
-                        , button [ onClick UserClickedJoinGame, class "join-button" ] [ text "join" ]
-                        ]
-                    , div [ class "create" ]
-                        [ button [ onClick UserClickedCreateNewGame ] [ text "CREATE NEW GAME" ]
-                        ]
+                [ div [ class "join" ]
+                    [ h1 [] [ text "Game Code" ]
+                    , input [ onInput UserTypedRoomToEnter, maxlength 4 ] []
+                    , button [ onClick UserClickedJoinGame, class "join-button" ] [ text "join" ]
+                    ]
+                , div [ class "create" ]
+                    [ button [ onClick UserClickedCreateNewGame ] [ text "CREATE NEW GAME" ]
                     ]
                 ]
 

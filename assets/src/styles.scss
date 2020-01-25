@@ -1,6 +1,14 @@
 @import '~purecss/build/pure.css';
 @import './home.scss';
 
+$red: #E14F54;
+$blue: #85BCBE;
+$background: #F6EEE5;
+
+body {
+    background-color: $background;
+}
+
 .page-container {
     display: flex;
 }
@@ -129,14 +137,14 @@
 //}
 
 .admin- {
-   &red {border-color: red; background-color: red;} 
-   &blue {border-color: blue; background-color: blue;} 
+   &red {border-color: $red; background-color: $red;} 
+   &blue {border-color: $blue; background-color: $blue;} 
    &gray {border-color: gray; background-color: gray;} 
 }
 
 .audience- {
-   &red {background-color: red;} 
-   &blue {background-color: blue;} 
+   &red {background-color: $red;} 
+   &blue {background-color: $blue;} 
    &gray {background-color: gray;} 
 }
 .word {
