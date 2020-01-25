@@ -21,6 +21,25 @@ defmodule CodeNamesWeb.RoomChannel do
     end
   end
 
+  def handle_in("elmSaysJoinExistingRoom", msg, socket) do
+    IO.inspect("elmSaysJoinExistingRoom")
+    IO.inspect(msg)
+
+    game_room =
+      msg["room"] |> String.to_atom() |> IO.inspect(label: "this is the game_rrom name atom")
+
+    case GenServer.whereis(game_room) do
+      nil ->
+        raise "#{inspect(game_room)} dont exist}"
+
+      _ ->
+        room = Atom.to_string(game_room)
+        push(socket, "channelReplyingWithNewGameStarting", %{room: room})
+    end
+
+    {:noreply, socket}
+  end
+
   def handle_in("elmSaysCreateNewRoom", _msg, socket) do
     IO.inspect("elmSaysCreateNewRoom")
     IO.inspect(socket)

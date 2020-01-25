@@ -71,8 +71,14 @@ app.ports.alsoToSocket.subscribe(message => {
 
 
 app.ports.toSocket.subscribe(message => {
-    console.log("trying to do create new room")
-    channel.push("elmSaysCreateNewRoom", {})
+    if (message.action == "elmSaysCreateNewRoom"){
+        console.log("trying to do create new room")
+        channel.push("elmSaysCreateNewRoom", {})
+    } else if (message.action == "elmSaysJoinExistingRoom") {
+        console.log("trying to do join existing room", message.room)
+        channel.push("elmSaysJoinExistingRoom", {room: message.room})
+    }
+
 })
 
 //channel.push("restart", {})

@@ -47,6 +47,7 @@ type Msg
     | GotGameMsg Game.Msg
     | JoinedDifferentRoom Room
     | UserTypedRoomToEnter String
+    | UserClickedJoinGame
     | NOOP
 
 
@@ -91,8 +92,27 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        UserClickedJoinGame ->
+            case model of
+                ChoosingHowToStartGame Nothing roomTypings ->
+                    ( ChoosingHowToStartGame Nothing roomTypings
+                    , toSocket <|
+                        E.object
+                            [ ( "action", E.string "elmSaysJoinExistingRoom" )
+                            , ( "room", E.string roomTypings )
+                            ]
+                    )
+
+                _ ->
+                    ( model, Cmd.none )
+
         UserClickedCreateNewGame ->
-            ( ChoosingHowToStartGame Nothing "", toSocket <| E.string "elmSaysCreateNewRoom" )
+            ( ChoosingHowToStartGame Nothing ""
+            , toSocket <|
+                E.object
+                    [ ( "action", E.string "elmSaysCreateNewRoom" )
+                    ]
+            )
 
         GotCodeGiverMsg msgCG ->
             case model of
@@ -152,10 +172,10 @@ bodyView model =
         ChoosingHowToStartGame maybeRoom roomTypings ->
             div [ class "home-container" ]
                 [ div [ class "centered-prompt" ]
-                    [ div [ class "join" ]
+                    [ div [ class "join!" ]
                         [ h1 [] [ text "Game Code" ]
                         , input [ onInput UserTypedRoomToEnter ] []
-                        , button [ class "join-button" ] [ text "join" ]
+                        , button [ onClick UserClickedJoinGame, class "join-button" ] [ text "join" ]
                         ]
                     , div [ class "create" ]
                         [ button [ onClick UserClickedCreateNewGame ] [ text "CREATE NEW GAME" ]
