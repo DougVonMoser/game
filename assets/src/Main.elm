@@ -6,7 +6,7 @@ import CodeGiver
 import Game
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
 import Json.Decode as D exposing (Decoder, at, string)
 import Json.Encode as E exposing (Value)
@@ -25,13 +25,13 @@ port joinedDifferentRoom : (D.Value -> msg) -> Sub msg
 
 
 type Model
-    = ChoosingHowToStartGame (Maybe Room)
+    = ChoosingHowToStartGame (Maybe Room) String
     | InGame Room Game.Model
     | InCodeGiver Room CodeGiver.Model
 
 
 init _ =
-    ( ChoosingHowToStartGame Nothing, Cmd.none )
+    ( ChoosingHowToStartGame Nothing "", Cmd.none )
 
 
 type Room
@@ -46,6 +46,7 @@ type Msg
     | GotCodeGiverMsg CodeGiver.AdminMsg
     | GotGameMsg Game.Msg
     | JoinedDifferentRoom Room
+    | UserTypedRoomToEnter String
     | NOOP
 
 
@@ -54,13 +55,21 @@ update msg model =
         NOOP ->
             ( model, Cmd.none )
 
+        UserTypedRoomToEnter s ->
+            case model of
+                ChoosingHowToStartGame maybeRoom roomTypings ->
+                    ( ChoosingHowToStartGame maybeRoom s, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
+
         JoinedDifferentRoom room ->
-            ( ChoosingHowToStartGame <| Just room, Cmd.none )
+            ( ChoosingHowToStartGame (Just room) "", Cmd.none )
 
         UserClickedImInTheWrongGame ->
             case model of
                 _ ->
-                    ( ChoosingHowToStartGame Nothing, joinLobby <| E.string "joindatlobby" )
+                    ( ChoosingHowToStartGame Nothing "", joinLobby <| E.string "joindatlobby" )
 
         UserClickedImAnAdmin ->
             case model of
@@ -72,7 +81,7 @@ update msg model =
 
         ServerSentData x ->
             case model of
-                ChoosingHowToStartGame (Just room) ->
+                ChoosingHowToStartGame (Just room) _ ->
                     let
                         ( gameModel, cmd ) =
                             Game.decodeCardsFromServer Game.initModel x
@@ -83,7 +92,7 @@ update msg model =
                     ( model, Cmd.none )
 
         UserClickedCreateNewGame ->
-            ( ChoosingHowToStartGame Nothing, toSocket <| E.string "elmSaysCreateNewRoom" )
+            ( ChoosingHowToStartGame Nothing "", toSocket <| E.string "elmSaysCreateNewRoom" )
 
         GotCodeGiverMsg msgCG ->
             case model of
@@ -121,7 +130,7 @@ toolbarView model =
     let
         listOfButtons =
             case model of
-                ChoosingHowToStartGame _ ->
+                ChoosingHowToStartGame _ _ ->
                     []
 
                 InGame (Room room) _ ->
@@ -140,12 +149,12 @@ toolbarView model =
 
 bodyView model =
     case model of
-        ChoosingHowToStartGame maybeRoom ->
+        ChoosingHowToStartGame maybeRoom roomTypings ->
             div [ class "home-container" ]
                 [ div [ class "centered-prompt" ]
                     [ div [ class "join" ]
                         [ h1 [] [ text "Game Code" ]
-                        , input [] []
+                        , input [ onInput UserTypedRoomToEnter ] []
                         , button [ class "join-button" ] [ text "join" ]
                         ]
                     , div [ class "create" ]
@@ -184,7 +193,7 @@ socketHandler model rawCards =
         InGame _ _ ->
             GotGameMsg (Game.ReceivedCardsFromServer rawCards)
 
-        ChoosingHowToStartGame _ ->
+        ChoosingHowToStartGame _ _ ->
             ServerSentData rawCards
 
 
@@ -205,7 +214,7 @@ subscriptions model =
             ]
     in
     case model of
-        ChoosingHowToStartGame _ ->
+        ChoosingHowToStartGame _ _ ->
             Sub.batch sockets
 
         InGame _ gameModel ->
