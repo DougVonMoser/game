@@ -1,7 +1,8 @@
-FROM code_names_build_env
+FROM butts
 
-ENV MIX_ENV=prod 
-ENV SECRET_KEY_BASE=superdupersecret 
+ENV MIX_ENV=prod \
+    SECRET_KEY_BASE=superdupersecret \
+    LANG=C.UTF-8
 
 ADD mix.exs mix.lock ./
 RUN mix do deps.get --only prod 
