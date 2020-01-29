@@ -14,9 +14,9 @@ RUN wget "http://erlang.org/download/otp_src_21.3.tar.gz" -O otp21.tar.gz && \
 
 ENV LANG=C.UTF-8
 
-RUN wget "https://github.com/elixir-lang/elixir/archive/v1.9.0.tar.gz" && \
-    tar xfz v1.9.0.tar.gz && \ 
-    cd elixir-1.9.0/ && \ 
+RUN wget "https://github.com/elixir-lang/elixir/archive/v1.10.0.tar.gz" && \
+    tar xfz v1.10.0.tar.gz && \ 
+    cd elixir-1.10.0/ && \ 
     export PATH="${PATH}:/usr/local/bin" && \
     make && make install && \
     mix local.hex --force && \

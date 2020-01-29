@@ -4,14 +4,17 @@ ENV MIX_ENV=prod \
     SECRET_KEY_BASE=superdupersecret \
     LANG=C.UTF-8
 
-ADD mix.exs mix.lock ./
+WORKDIR /workdir/yay/
+
+COPY mix.exs mix.lock ./
 RUN mix do deps.get --only prod 
 
-ADD assets/package.json assets/package-lock.json assets/
+COPY assets/package.json assets/package-lock.json assets/
 RUN cd assets && \
     npm install
 
-ADD . .
+#clean this up
+COPY . .
 
 RUN cd assets && \
     npm run prod && \
@@ -20,4 +23,5 @@ RUN cd assets && \
 
 RUN mix release first_deploy --overwrite
 
-RUN tar -cvf testing.tar /_build/prod/rel/first_deploy
+RUN cp _build/prod/first_deploy-0.1.0.tar.gz first_deploy-0.1.0.tar.gz
+

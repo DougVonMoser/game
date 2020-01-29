@@ -14,7 +14,8 @@ defmodule CodeNames.MixProject do
       releases: [
         first_deploy: [
           include_executables_for: [:unix],
-          applications: [runtime_tools: :permanent]
+          applications: [runtime_tools: :permanent],
+          steps: [:assemble, :tar]
         ]
       ]
     ]
