@@ -29,3 +29,4 @@ mix release first_deploy --overwrite
 echo "cp _build/prod/first_deploy-0.1.0.tar.gz first_deploy-0.1.0.tar.gz"
 cp _build/prod/first_deploy-0.1.0.tar.gz first_deploy-0.1.0.tar.gz
 
+echo "release created!"
