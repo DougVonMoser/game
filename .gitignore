@@ -1,5 +1,4 @@
-#custom ignore for releases
-/deployables/
+.DS_Store
 # The directory Mix will write compiled artifacts to.
 /_build/
 
@@ -36,3 +35,5 @@ npm-debug.log
 /priv/static/
 .elixir_ls/
 
+# release plopped onto the root dir 
+first_deploy-0.1.0.tar.gz
