@@ -6,6 +6,13 @@ set -e
 #docker build -t butts -f Dockerfile.build_env . 
 #maybe multi stage builds could help here?
 
-docker run -v $(PWD):/workdir/yay butts bash create_release.sh
+
+# bind pwd as a volume, but ignore the build folders
+
+docker run -v $(PWD):/workdir/yay                \
+           -v /workdir/yay/deps/                 \
+           -v /workdir/yay/_build/               \
+           -v /workdir/yay/assets/node_modules/  \
+           butts bash create_release.sh
 
 #will add ec2 commands to copy relasea and whatnot

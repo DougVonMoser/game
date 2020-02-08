@@ -35,5 +35,5 @@ npm-debug.log
 /priv/static/
 .elixir_ls/
 
-# release plopped onto the root dir 
+# release plopped and overwrites previous onto the root dir 
 first_deploy-0.1.0.tar.gz

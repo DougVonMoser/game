@@ -6,11 +6,6 @@ export MIX_ENV="prod"
 export SECRET_KEY_BASE="superdupersecret"
 export LANG="C.UTF-8"
 
-echo "rim raffing old deps, _build, and node_modules"
-rm -rf deps
-rm -rf _build
-rm -rf assets/node_modules/
-
 echo "mix deps.get --only prod "
 mix deps.get --only prod 
 
