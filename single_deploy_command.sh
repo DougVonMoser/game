@@ -15,4 +15,14 @@ docker run -v $(PWD):/workdir/yay                \
            -v /workdir/yay/assets/node_modules/  \
            butts bash create_release.sh
 
-#will add ec2 commands to copy relasea and whatnot
+
+EC2_CURR_DPLY_PUBLIC_DNS=`aws --profile=personal --region=us-east-2 ec2 describe-instances | jq -r '.Reservations[].Instances[].PublicDnsName'`
+
+# copy the embedded script and the release 
+scp -i ~/Downloads/code_names_kick.pem embedded_script.sh ec2-user@$EC2_CURR_DPLY_PUBLIC_DNS:~
+scp -i ~/Downloads/code_names_kick.pem first_deploy-0.1.0.tar.gz ec2-user@$EC2_CURR_DPLY_PUBLIC_DNS:~
+
+# kick off that embedded script
+ssh -i ~/Downloads/code_names_kick.pem ec2-user@$EC2_CURR_DPLY_PUBLIC_DNS bash embedded_script.sh
+
+
