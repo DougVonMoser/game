@@ -8,7 +8,6 @@ defmodule CodeNames.Application do
 
     children = [
       CodeNamesWeb.Endpoint
-      # CodeNames.GameServer
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

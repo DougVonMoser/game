@@ -7,9 +7,6 @@
 # General application configuration
 use Mix.Config
 
-config :code_names,
-  ecto_repos: [CodeNames.Repo]
-
 # Configures the endpoint
 config :code_names, CodeNamesWeb.Endpoint,
   url: [host: "localhost"],
