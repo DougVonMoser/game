@@ -12,6 +12,7 @@ import Json.Decode as D exposing (Decoder, at, string)
 import Json.Encode as E exposing (Value)
 import List.Extra as List
 import Maybe.Extra as Maybe
+import Socket exposing (..)
 import Task
 
 
@@ -29,8 +30,12 @@ type alias Model =
 
 initModel =
     { cards = []
-    , boardStyle = Animation.style [ Animation.scale 1, Animation.translate (px 0) (px 0) ]
+    , boardStyle = initBoardStyle
     }
+
+
+initBoardStyle =
+    Animation.style [ Animation.scale 1, Animation.translate (px 0) (px 0) ]
 
 
 init : () -> ( Model, Cmd Msg )
@@ -57,6 +62,7 @@ type Msg
     | ZoomedInReadyToTurn Hash
     | TurnedReadyToZoomOut
     | FoundElementsReadyToZoomIn (Result Dom.Error ContainerToTranslate)
+    | UserClickedOnHash Hash
 
 
 type ContainerToTranslate
@@ -66,6 +72,9 @@ type ContainerToTranslate
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
+        UserClickedOnHash hash ->
+            ( model, alsoToSocket <| encodeHash hash )
+
         FoundElementsReadyToZoomIn x ->
             case x of
                 Err _ ->
@@ -185,7 +194,7 @@ view model =
         [ -- div [ class "score-container" ] <| scoreView model.cards,
           div [ class "outer-board" ]
             [ div (Animation.render model.boardStyle ++ [ id "board-container", class "board-container" ])
-                [ div [ class "cards" ] <| List.indexedMap cardView model.cards
+                [ div [ class "cards noselect" ] <| List.indexedMap cardView model.cards
                 ]
             ]
         ]
@@ -250,6 +259,7 @@ cardView count card =
         UnTurned style (Word word) (OriginallyColored team) hash ->
             div
                 [ class <| "card "
+                , onClick <| UserClickedOnHash hash
                 , id <| "middle" ++ String.fromInt count
                 ]
                 [ div (Animation.render style ++ [ class "card-inner", id <| hashToIdSelectorString hash ])

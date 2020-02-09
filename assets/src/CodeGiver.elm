@@ -1,4 +1,4 @@
-port module CodeGiver exposing (..)
+module CodeGiver exposing (..)
 
 import Browser
 import Game exposing (..)
@@ -8,9 +8,7 @@ import Html.Events exposing (onClick)
 import Http exposing (Error(..))
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-
-
-port alsoToSocket : Encode.Value -> Cmd msg
+import Socket exposing (..)
 
 
 
@@ -105,7 +103,6 @@ handleClickUpdate clickedHash model =
                 model.cards
     in
     ( { model | cards = updatedCards }
-      --, toSocket (encodeHash clickedHash)
     , alsoToSocket (encodeHash clickedHash)
     )
 
@@ -121,7 +118,7 @@ view model =
     div [ class "admin-container" ]
         [ div [ class "admin-bar" ] [ adminBarView model ]
         , div [ class "board-container" ]
-            [ div [ class "admin-cards" ] <| List.map cardView model.cards
+            [ div [ class "admin-cards noselect" ] <| List.map cardView model.cards
             ]
         ]
 

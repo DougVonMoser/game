@@ -1,4 +1,4 @@
-port module Main exposing (..)
+module Main exposing (..)
 
 import Browser
 import Browser.Dom as Dom
@@ -10,18 +10,7 @@ import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
 import Json.Decode as D exposing (Decoder, at, string)
 import Json.Encode as E exposing (Value)
-
-
-port toSocket : E.Value -> Cmd msg
-
-
-port joinLobby : E.Value -> Cmd msg
-
-
-port fromSocket : (D.Value -> msg) -> Sub msg
-
-
-port joinedDifferentRoom : (D.Value -> msg) -> Sub msg
+import Socket exposing (..)
 
 
 type Model
