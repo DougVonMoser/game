@@ -48,7 +48,7 @@ update msg model =
         UserTypedRoomToEnter s ->
             case model of
                 ChoosingHowToStartGame maybeRoom roomTypings ->
-                    ( ChoosingHowToStartGame maybeRoom s, Cmd.none )
+                    ( ChoosingHowToStartGame maybeRoom <| String.toUpper s, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -162,7 +162,7 @@ bodyView model =
             div [ class "home-container" ]
                 [ div [ class "join" ]
                     [ h1 [] [ text "Game Code" ]
-                    , input [ onInput UserTypedRoomToEnter, maxlength 4 ] []
+                    , input [ onInput UserTypedRoomToEnter, maxlength 4, value roomTypings ] []
                     , button [ onClick UserClickedJoinGame, class "join-button" ] [ text "join" ]
                     ]
                 , div [ class "create" ]
