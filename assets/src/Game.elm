@@ -11,6 +11,7 @@ import Http exposing (Error(..))
 import Json.Decode as D exposing (Decoder, at, string)
 import Json.Encode as E exposing (Value)
 import List.Extra as List
+import Maybe.Extra as Maybe
 import Task
 
 
@@ -92,7 +93,12 @@ update message model =
         TurnedReadyToZoomOut ->
             let
                 updatedBoardStyle =
-                    Animation.queue [ Animation.to [ Animation.scale 1, Animation.translate (px 0) (px 0) ] ]
+                    Animation.queue
+                        [ Animation.to
+                            [ Animation.scale 1
+                            , Animation.translate (px 0) (px 0)
+                            ]
+                        ]
                         model.boardStyle
             in
             ( { model | boardStyle = updatedBoardStyle }, Cmd.none )
@@ -113,19 +119,10 @@ decodeCardsFromServer model x =
         Ok decoded_thing ->
             let
                 ( updatedCards, maybeHash ) =
-                    if model.cards == [] then
-                        ( decoded_thing, Nothing )
-
-                    else
-                        transferOverStyles model.cards decoded_thing
+                    transferOverStyles model.cards decoded_thing
 
                 boardCmd =
-                    case maybeHash of
-                        Just hash ->
-                            updateBoardCmd hash
-
-                        Nothing ->
-                            Cmd.none
+                    Maybe.unwrap Cmd.none updateBoardCmd maybeHash
             in
             ( { model | cards = updatedCards }, boardCmd )
 
@@ -152,7 +149,8 @@ updateBoardCmd hash =
 updateBoardStyle : ContainerToTranslate -> Animation.Messenger.State Msg -> Animation.Messenger.State Msg
 updateBoardStyle (ContainerToTranslate x y hash) boardStyle =
     Animation.queue
-        [ Animation.to [ Animation.translate (px x) (px y), Animation.scale 4 ]
+        [ Animation.to [ Animation.scale 1, Animation.translate (px 0) (px 0) ]
+        , Animation.to [ Animation.translate (px x) (px y), Animation.scale 4 ]
         , Animation.Messenger.send <| ZoomedInReadyToTurn hash
         ]
         boardStyle
