@@ -64,6 +64,12 @@ app.ports.joinLobby.subscribe(message => {
 })
 
 
+app.ports.restartGameSameRoom.subscribe(message => {
+    console.log("trying to restart the game but staying in this room")
+    channel.push("restart", {})
+})
+
+
 app.ports.alsoToSocket.subscribe(message => {
     console.log("sending the click and hash to server")
     channel.push("clicked", {body: message})

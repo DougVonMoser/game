@@ -50,9 +50,7 @@ update : AdminMsg -> Model -> ( Model, Cmd AdminMsg )
 update message model =
     case message of
         TriggerRestart ->
-            --( model, toSocket <| Encode.string "restart" )
-            --( model, alsoToSocket <| Encode.string "restart" )
-            ( model, Cmd.none )
+            ( model, restartGameSameRoom <| Encode.string "restart" )
 
         Clicked hash ->
             ( model

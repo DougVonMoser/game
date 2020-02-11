@@ -143,13 +143,13 @@ toolbarView model =
                     []
 
                 InGame (Room room) _ ->
-                    [ button [ onClick UserClickedImAnAdmin ] [ text "uhm im actually a codegiver" ]
-                    , button [ onClick UserClickedImInTheWrongGame ] [ text "uhm im in the wrong game" ]
+                    [ button [ onClick UserClickedImAnAdmin ] [ text "I'm giving clues this round!" ]
+                    , button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
                     , span [] [ text <| "in room " ++ room ]
                     ]
 
                 InCodeGiver (Room room) _ ->
-                    [ button [ onClick UserClickedImInTheWrongGame ] [ text "uhm im in the wrong game" ]
+                    [ button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
                     , span [] [ text <| "in room " ++ room ]
                     ]
     in
@@ -163,7 +163,7 @@ bodyView model =
                 [ div [ class "join" ]
                     [ h1 [] [ text "Game Code" ]
                     , input [ onInput UserTypedRoomToEnter, maxlength 4, value roomTypings ] []
-                    , button [ onClick UserClickedJoinGame, class "join-button" ] [ text "join" ]
+                    , joinButton roomTypings
                     ]
                 , div [ class "create" ]
                     [ button [ onClick UserClickedCreateNewGame ] [ text "CREATE NEW GAME" ]
@@ -176,6 +176,21 @@ bodyView model =
 
         InGame _ gameModel ->
             Html.map GotGameMsg <| Game.view gameModel
+
+
+joinButton roomTypings =
+    let
+        isDisabled =
+            String.length roomTypings /= 4
+
+        ( disabledClass, disabledText ) =
+            if isDisabled then
+                ( " disabled", "Enter 4-Letter Code" )
+
+            else
+                ( "", "Play!" )
+    in
+    button [ onClick UserClickedJoinGame, class ("join-button" ++ disabledClass), disabled isDisabled ] [ text disabledText ]
 
 
 main : Program () Model Msg

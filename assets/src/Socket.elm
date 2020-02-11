@@ -17,3 +17,6 @@ port joinedDifferentRoom : (D.Value -> msg) -> Sub msg
 
 
 port alsoToSocket : E.Value -> Cmd msg
+
+
+port restartGameSameRoom : E.Value -> Cmd msg
