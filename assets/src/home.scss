@@ -1,15 +1,18 @@
+@import './tokens.scss';
+
 .home-container {
     height: 100vh;
     width: 100vw;
     display: flex;
     justify-content: top;
-    background-color: red;
+    background-color: $background;
     flex-direction: column;
     align-items: center;
 
     .join {
         display: flex;
         flex-direction: column;
+        font-weight: bold;
         input {
 
             text-align: center;
@@ -23,8 +26,35 @@
         }
         
     }
-    .create{
+    .create {
         margin-top: 56px;
+        color: white;
+        font-weight: bold;
+
+        button {
+            &:hover {cursor: pointer;}
+            border-radius: 4px;
+            padding: 16px 32px;
+            background-color: $gray;
+
+        }
+    }
+    .gif {
+        margin: 56px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        img {
+            max-width: 80%;
+            @media only screen and (min-width: 450px) {
+                max-width: 60%;
+            }
+            @media only screen and (min-width: 700px) {
+                max-width: 40%;
+            }
+
+        }
     }
 
 }

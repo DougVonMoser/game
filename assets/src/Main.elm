@@ -168,6 +168,7 @@ bodyView model =
                 , div [ class "create" ]
                     [ button [ onClick UserClickedCreateNewGame ] [ text "CREATE NEW GAME" ]
                     ]
+                , div [ class "gif" ] [ img [ src "https://s3.amazonaws.com/dougvonmoser.com/commonplace.gif" ] [] ]
                 ]
 
         InCodeGiver _ codeGiverModel ->

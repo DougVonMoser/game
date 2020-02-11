@@ -1,11 +1,12 @@
 FROM amazonlinux:latest
 
-
+# TOOLS
 RUN yum install -y tar wget gzip && \ 
     yum install ncurses-devel openssl-devel -y && \
     yum groupinstall "Development Tools" -y
 
 
+# ERLANG RUNTIME
 RUN wget "http://erlang.org/download/otp_src_21.3.tar.gz" -O otp21.tar.gz && \ 
     tar xfz otp21.tar.gz && \
     cd otp_src_21.3/ && \ 
@@ -14,6 +15,7 @@ RUN wget "http://erlang.org/download/otp_src_21.3.tar.gz" -O otp21.tar.gz && \
 
 ENV LANG=C.UTF-8
 
+#ELIXIR RUNTIME
 RUN wget "https://github.com/elixir-lang/elixir/archive/v1.10.0.tar.gz" && \
     tar xfz v1.10.0.tar.gz && \ 
     cd elixir-1.10.0/ && \ 
@@ -23,6 +25,7 @@ RUN wget "https://github.com/elixir-lang/elixir/archive/v1.10.0.tar.gz" && \
     mix local.rebar --force && \
     mix archive.install hex phx_new 1.4.9 --force
 
+# SOME BULLSHIT 
 RUN curl -sL https://rpm.nodesource.com/setup_12.x | bash - && \
     yum install -y nodejs --enablerepo=nodesource
 
