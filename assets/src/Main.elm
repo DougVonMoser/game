@@ -185,7 +185,7 @@ joinButton roomTypings =
 
         ( disabledClass, disabledText ) =
             if isDisabled then
-                ( " disabled", "Enter 4-Letter Code" )
+                ( " disabled", "Enter 4-Letter Room Code" )
 
             else
                 ( "", "Play!" )
