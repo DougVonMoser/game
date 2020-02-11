@@ -5,9 +5,9 @@
     width: 100vw;
     display: flex;
     justify-content: top;
-	background: repeating-linear-gradient(45deg, $red 20%, $blue 50%, $background 70% 10%);
-    // background-size: 399% 400%;
-	// animation: gradient 15s ease infinite;
+	background: repeating-linear-gradient(45deg, $red 20%, $blue 50%, $background 70%, $red 90% 10%);
+    background-size: 399% 400%;
+	animation: gradient 15s ease infinite;
     flex-direction: column;
     align-items: center;
 
