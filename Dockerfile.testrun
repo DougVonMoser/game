@@ -2,6 +2,6 @@ FROM amazonlinux
 WORKDIR /deployingthings
 ENV HOST_URL=localhost
 COPY first_deploy-0.1.0.tar.gz .
-EXPOSE 4000
+EXPOSE 80
 RUN yum install -y tar gzip
 RUN tar -xvf first_deploy-0.1.0.tar.gz

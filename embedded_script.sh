@@ -14,4 +14,4 @@ tar -xvf first_deploy-0.1.0.tar.gz
 rm first_deploy-0.1.0.tar.gz
 
 # start it
-HOST_URL=18.191.228.147 bin/first_deploy daemon_iex
+sudo HOST_URL=game.dougvonmoser.com bin/first_deploy daemon_iex
