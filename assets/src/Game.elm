@@ -426,26 +426,26 @@ mapStyle animMsg card ( cardsAcc, cmdAcc ) =
 
 transferOverStyles : List Card -> List Card -> ( List Card, Maybe Hash )
 transferOverStyles oldCards newCards =
-    List.map
-        (\new ->
-            case List.find (sameCard new) oldCards of
-                Just old ->
-                    case old of
-                        UnTurned style word oc hash ->
-                            case new of
-                                Turned _ _ _ _ _ ->
-                                    ( Turned style word (TurnedOverBy Red) oc hash, Just hash )
+    newCards
+        |> List.map
+            (\new ->
+                case List.find (sameCard new) oldCards of
+                    Just old ->
+                        case old of
+                            UnTurned style word oc hash ->
+                                case new of
+                                    Turned _ _ _ _ _ ->
+                                        ( Turned style word (TurnedOverBy Red) oc hash, Just hash )
 
-                                _ ->
-                                    ( old, Nothing )
+                                    _ ->
+                                        ( old, Nothing )
 
-                        _ ->
-                            ( old, Nothing )
+                            _ ->
+                                ( old, Nothing )
 
-                Nothing ->
-                    ( new, Nothing )
-        )
-        newCards
+                    Nothing ->
+                        ( new, Nothing )
+            )
         |> List.foldl
             (\( card, whatever ) ( cards, turnedCard ) ->
                 case turnedCard of

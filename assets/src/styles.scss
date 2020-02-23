@@ -11,6 +11,11 @@ body {
 .toolbar {
     background-color: gray;
     height: 52px;
+    button {
+        padding: 16px;
+        border-radius: 4px;
+        margin: 0 8px;
+    }
 
 }
 
@@ -197,7 +202,7 @@ body {
     border-radius: 4px;
     min-width: 60%;
     @media only screen and (min-width: 900px) {
-        font-size: 32px;
+        font-size: 26px;
         min-width: 90%;
     } 
 }

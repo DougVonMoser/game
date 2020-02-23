@@ -114,8 +114,8 @@ handleClickUpdate clickedHash model =
 view : Model -> Html AdminMsg
 view model =
     div [ class "admin-container" ]
-        [ div [ class "admin-bar" ] [ adminBarView model ]
-        , div [ class "board-container" ]
+        [ -- div [ class "admin-bar" ] [ adminBarView model ],
+          div [ class "board-container" ]
             [ div [ class "admin-cards noselect" ] <| List.map cardView model.cards
             ]
         ]

@@ -30,6 +30,7 @@ type Room
 type Msg
     = ServerSentData D.Value
     | UserClickedCreateNewGame
+    | UserClickedImNotAnAdmin
     | UserClickedImAnAdmin
     | UserClickedImInTheWrongGame
     | GotCodeGiverMsg CodeGiver.AdminMsg
@@ -65,6 +66,18 @@ update msg model =
             case model of
                 InGame room gameModel ->
                     ( InCodeGiver room { cards = gameModel.cards }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        UserClickedImNotAnAdmin ->
+            case model of
+                InCodeGiver room gameModel ->
+                    let
+                        initModel =
+                            Game.initModel
+                    in
+                    ( InGame room { initModel | cards = gameModel.cards }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -149,8 +162,9 @@ toolbarView model =
                 ]
 
         InCodeGiver (Room room) _ ->
-            div []
-                [ button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
+            div [ class "toolbar" ]
+                [ button [ onClick UserClickedImNotAnAdmin ] [ text "I aint giving clues this round!" ]
+                , button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
                 , span [] [ text <| "in room " ++ room ]
                 ]
 
