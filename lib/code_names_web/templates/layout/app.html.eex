@@ -7,6 +7,8 @@
     <title>CodeNames</title>
   </head>
 
+
+
   <!--  PLOPPED IN FOR A DIRTY FOUC FIX -->
   <body><div><div></div><div class="home-container"><div class="join"><h1>Game Code</h1><input maxlength="4"><button class="join-button disabled" disabled="">Enter 4-Letter Room Code</button></div><div class="create"><button>CREATE NEW GAME</button></div><div class="gif"><img src="https://s3.amazonaws.com/dougvonmoser.com/commonplace.gif"></div></div></div>
   <!--  PLOPPED IN FOR A DIRTY FOUC FIX -->
