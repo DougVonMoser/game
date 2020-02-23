@@ -17,3 +17,6 @@ rm first_deploy-0.1.0.tar.gz
 
 # start it
 sudo HOST_URL=game.dougvonmoser.com bin/first_deploy daemon_iex
+
+
+echo "DEPLOYED AND STARTED!"
