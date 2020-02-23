@@ -135,25 +135,24 @@ view model =
         ]
 
 
+toolbarView : Model -> Html Msg
 toolbarView model =
-    let
-        listOfButtons =
-            case model of
-                ChoosingHowToStartGame _ _ ->
-                    []
+    case model of
+        ChoosingHowToStartGame _ _ ->
+            text ""
 
-                InGame (Room room) _ ->
-                    [ button [ onClick UserClickedImAnAdmin ] [ text "I'm giving clues this round!" ]
-                    , button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
-                    , span [] [ text <| "in room " ++ room ]
-                    ]
+        InGame (Room room) _ ->
+            div [ class "toolbar" ]
+                [ button [ onClick UserClickedImAnAdmin ] [ text "I'm giving clues this round!" ]
+                , button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
+                , span [] [ text <| "in room " ++ room ]
+                ]
 
-                InCodeGiver (Room room) _ ->
-                    [ button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
-                    , span [] [ text <| "in room " ++ room ]
-                    ]
-    in
-    div [] listOfButtons
+        InCodeGiver (Room room) _ ->
+            div []
+                [ button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
+                , span [] [ text <| "in room " ++ room ]
+                ]
 
 
 bodyView model =
