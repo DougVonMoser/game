@@ -213,7 +213,7 @@ main =
         , update = update
         , view =
             \m ->
-                { title = "Codenames getting ready"
+                { title = "Game"
                 , body = [ view m ]
                 }
         , subscriptions = subscriptions
