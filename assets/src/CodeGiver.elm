@@ -61,18 +61,31 @@ update message model =
             codeGiverDecodeCardsFromServer model x
 
 
+
+-- TODO: eesh
+
+
 codeGiverDecodeCardsFromServer model x =
     case Decode.decodeValue cardsDecoder x of
         Ok decoded_thing ->
             let
-                ( updatedCards, _ ) =
+                ( updatedCards, maybeHash ) =
                     if model.cards == [] then
                         ( decoded_thing, Nothing )
 
                     else
                         transferOverStyles model.cards decoded_thing
             in
-            ( { model | cards = updatedCards }, Cmd.none )
+            case maybeHash of
+                Just hash ->
+                    let
+                        superUpdatedCards =
+                            manuallyTurnCardByHash updatedCards hash
+                    in
+                    ( { model | cards = superUpdatedCards }, Cmd.none )
+
+                Nothing ->
+                    ( { model | cards = updatedCards }, Cmd.none )
 
         Err e ->
             ( model, Cmd.none )

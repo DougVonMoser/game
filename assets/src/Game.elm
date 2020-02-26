@@ -125,10 +125,10 @@ update message model =
 
 decodeCardsFromServer model x =
     case D.decodeValue cardsDecoder x of
-        Ok decoded_thing ->
+        Ok decoded_cards ->
             let
                 ( updatedCards, maybeHash ) =
-                    transferOverStyles model.cards decoded_thing
+                    transferOverStyles model.cards decoded_cards
 
                 boardCmd =
                     Maybe.unwrap Cmd.none updateBoardCmd maybeHash
