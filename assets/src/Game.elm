@@ -47,15 +47,34 @@ init _ =
 
 
 -- type ServerCard
---     = UnTurned Word OriginallyColored Hash
---     | Turned Word TurnedOverBy OriginallyColored Hash
---
---
+
+
+type TurnedStatus
+    = NotTurned
+    | IsTurned Team
 
 
 type GameCard
     = UnTurned (State Msg) Word OriginallyColored Hash
     | Turned (State Msg) Word TurnedOverBy OriginallyColored Hash
+
+
+type OriginallyColored
+    = OriginallyColored Team
+
+
+type TurnedOverBy
+    = TurnedOverBy Team
+
+
+type Word
+    = Word String
+
+
+type Team
+    = Red
+    | Blue
+    | NoTeam
 
 
 
@@ -498,24 +517,6 @@ cardMatchesHash card hash1 =
 
         Turned _ _ _ _ hash2 ->
             hashesAreEqual hash1 hash2
-
-
-type OriginallyColored
-    = OriginallyColored Team
-
-
-type TurnedOverBy
-    = TurnedOverBy Team
-
-
-type Word
-    = Word String
-
-
-type Team
-    = Red
-    | Blue
-    | NoTeam
 
 
 cardToItsStyle card =

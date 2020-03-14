@@ -10,7 +10,7 @@ import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
 import Json.Decode as D exposing (Decoder, at, string)
 import Json.Encode as E exposing (Value)
-import Socket exposing (..)
+import Socket
 
 
 type Model
@@ -62,7 +62,7 @@ update msg model =
         UserClickedImInTheWrongGame ->
             case model of
                 _ ->
-                    ( ChoosingHowToStartGame Nothing "", joinLobby <| E.string "joindatlobby" )
+                    ( ChoosingHowToStartGame Nothing "", Socket.joinLobby <| E.string "joindatlobby" )
 
         UserClickedImAnAdmin ->
             case model of
@@ -107,7 +107,7 @@ update msg model =
             case model of
                 ChoosingHowToStartGame Nothing roomTypings ->
                     ( ChoosingHowToStartGame Nothing roomTypings
-                    , toSocket <|
+                    , Socket.toSocket <|
                         E.object
                             [ ( "action", E.string "elmSaysJoinExistingRoom" )
                             , ( "room", E.string roomTypings )
@@ -119,7 +119,7 @@ update msg model =
 
         UserClickedCreateNewGame ->
             ( ChoosingHowToStartGame Nothing ""
-            , toSocket <|
+            , Socket.toSocket <|
                 E.object
                     [ ( "action", E.string "elmSaysCreateNewRoom" )
                     ]
@@ -268,8 +268,8 @@ roomDecoding raw =
 subscriptions model =
     let
         sockets =
-            [ fromSocket (socketHandler model)
-            , joinedDifferentRoom roomDecoding
+            [ Socket.fromSocket (socketHandler model)
+            , Socket.joinedDifferentRoom roomDecoding
             ]
     in
     case model of
