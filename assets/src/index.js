@@ -2,16 +2,19 @@
 
 require("./styles.scss");
 
- import {Socket} from "phoenix"
+import {Socket} from "phoenix"
+import findOrCreateUserToken from "./uuid.js"
 
-let socket = new Socket("/socket", {params: {token: window.userToken}})
+const global_user_token = findOrCreateUserToken()
+
+let socket = new Socket("/socket", {params: {token: global_user_token}})
 socket.connect()
 
 const Main = require('./Main.elm');
 let app = Main.Elm.Main.init({});
 
 
-let channel = socket.channel("room:lobby", {});
+let channel = socket.channel("room:lobby", {token: global_user_token});
 channel.join()
   .receive("ok", resp => {
         console.log("just joined lobby, got from server")
@@ -29,12 +32,15 @@ function reListenForUpdates () {
         console.log("channelReplyingWithNewGameStarting")
         joinGameRoom(msg)
     })
-
+    channel.on("presence_diff", msg => {
+        console.log(" i guess this is a presence diff")
+        console.log(msg)
+    })
 }
 
 function joinLobby () {
     console.log("joinLobby function")
-    channel = socket.channel("room:lobby", {});
+    channel = socket.channel("room:lobby", {token: global_user_token});
     channel.join()
       .receive("ok", resp => {
             console.log("just joined lobby, got from server")
@@ -47,7 +53,7 @@ function joinLobby () {
 function joinGameRoom (msg) {
     console.log("channel replying with new game starting ")
     console.log(msg)
-    channel = socket.channel("room:" + msg.room)
+    channel = socket.channel("room:" + msg.room, {token: global_user_token})
     channel.join()
    .receive("ok", resp => {
         console.log("successfully joined new channel, got from server")

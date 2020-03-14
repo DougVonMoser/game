@@ -1,4 +1,4 @@
-defmodule Codenames.Cards.ExhaustiveWordList do
+defmodule CodeNames.Cards.ExhaustiveWordList do
   def words do
     ~w(
       yard

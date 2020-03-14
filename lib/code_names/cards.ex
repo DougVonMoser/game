@@ -1,10 +1,10 @@
-defmodule Codenames.Cards do
+defmodule CodeNames.Cards do
   @doc """
   returns random cards for a new game
   """
 
-  alias Codenames.Cards.Card
-  alias Codenames.Cards.ExhaustiveWordList
+  alias CodeNames.Cards.Card
+  alias CodeNames.Cards.ExhaustiveWordList
 
   def generate_new_cards_for_game do
     red_and_blues_and_grays()

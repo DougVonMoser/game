@@ -1,17 +1,22 @@
 defmodule CodeNames.GameServer do
   use GenServer
 
-  def start_link(name \\ __MODULE__) do
-    GenServer.start_link(__MODULE__, [], name: name)
-  end
+  defstruct [:cards, :players]
 
   def init(_) do
     IO.inspect("I WAS INITTED")
-    {:ok, Codenames.Cards.generate_new_cards_for_game()}
+
+    initial_state = %__MODULE__{
+      cards: CodeNames.Cards.generate_new_cards_for_game(),
+      players: []
+    }
+
+    {:ok, initial_state}
   end
 
-  def handle_call({:clicked, hash}, _from, cards) do
+  def handle_call({:clicked, hash}, _from, state) do
     IO.inspect("I WAS get clidkedkced")
+    cards = state.cards
 
     mapper = fn card ->
       if card.hash == hash do
@@ -21,20 +26,20 @@ defmodule CodeNames.GameServer do
       end
     end
 
-    updated_cards = Enum.map(cards, mapper)
-    {:reply, updated_cards, updated_cards}
+    updated_state = %{state | cards: Enum.map(cards, mapper)}
+    {:reply, updated_state.cards, updated_state}
   end
 
-  def handle_call(:get_cards, _from, cards) do
+  def handle_call(:get_cards, _from, state) do
     IO.inspect("I WAS get carded")
-    {:reply, cards, cards}
+    {:reply, state.cards, state}
   end
 
-  def handle_call(:restart, _from, _) do
+  def handle_call(:restart, _from, state) do
     IO.inspect("I WAS RESTARTED")
-    new_cards = Codenames.Cards.generate_new_cards_for_game()
+    new_state = %{state | cards: CodeNames.Cards.generate_new_cards_for_game()}
 
-    {:reply, new_cards, new_cards}
+    {:reply, new_state.cards, new_state}
   end
 
   # all these need a topic to ask which process to reach out to

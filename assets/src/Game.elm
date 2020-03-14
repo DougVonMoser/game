@@ -23,7 +23,7 @@ import Task
 
 
 type alias Model =
-    { cards : List Card
+    { cards : List GameCard
     , boardStyle : Animation.Messenger.State Msg
     }
 
@@ -45,7 +45,15 @@ init _ =
     )
 
 
-type Card
+
+-- type ServerCard
+--     = UnTurned Word OriginallyColored Hash
+--     | Turned Word TurnedOverBy OriginallyColored Hash
+--
+--
+
+
+type GameCard
     = UnTurned (State Msg) Word OriginallyColored Hash
     | Turned (State Msg) Word TurnedOverBy OriginallyColored Hash
 
@@ -232,14 +240,14 @@ getTurnt =
            ]
 
 
-scoreView : List Card -> List (Html Msg)
+scoreView : List GameCard -> List (Html Msg)
 scoreView cards =
     [ teamScoreView cards Red
     , teamScoreView cards Blue
     ]
 
 
-teamScoreView : List Card -> Team -> Html Msg
+teamScoreView : List GameCard -> Team -> Html Msg
 teamScoreView cards team =
     div [ class "team-score" ]
         [ h1 [ class "team" ] [ text <| teamToString team ]
@@ -247,13 +255,13 @@ teamScoreView cards team =
         ]
 
 
-unTurnedCountOfTeam : List Card -> Team -> Int
+unTurnedCountOfTeam : List GameCard -> Team -> Int
 unTurnedCountOfTeam cards team =
     List.filter (\c -> isUnTurned c && cardBelongsToTeam c team) cards
         |> List.length
 
 
-cardView : Int -> Card -> Html Msg
+cardView : Int -> GameCard -> Html Msg
 cardView count card =
     case card of
         UnTurned style (Word word) (OriginallyColored team) hash ->
@@ -336,7 +344,7 @@ cardDecoder =
             )
 
 
-funky : String -> Team -> String -> Card
+funky : String -> Team -> String -> GameCard
 funky hash original_color word =
     UnTurned unturnt
         (Word word)
@@ -344,7 +352,7 @@ funky hash original_color word =
         (Hash hash)
 
 
-funky4 : String -> Team -> Team -> String -> Card
+funky4 : String -> Team -> Team -> String -> GameCard
 funky4 hash turnedOverBy original_color word =
     Turned defaultTurnt (Word word) (TurnedOverBy turnedOverBy) (OriginallyColored original_color) (Hash hash)
 
@@ -396,7 +404,7 @@ hashesAreEqual (Hash hash1) (Hash hash2) =
     hash1 == hash2
 
 
-isUnTurned : Card -> Bool
+isUnTurned : GameCard -> Bool
 isUnTurned card =
     case card of
         UnTurned _ _ _ _ ->
@@ -406,7 +414,7 @@ isUnTurned card =
             False
 
 
-mapStyle : Animation.Msg -> Card -> ( List Card, List (Cmd Msg) ) -> ( List Card, List (Cmd Msg) )
+mapStyle : Animation.Msg -> GameCard -> ( List GameCard, List (Cmd Msg) ) -> ( List GameCard, List (Cmd Msg) )
 mapStyle animMsg card ( cardsAcc, cmdAcc ) =
     case card of
         UnTurned style w oc h ->
@@ -424,7 +432,7 @@ mapStyle animMsg card ( cardsAcc, cmdAcc ) =
             ( cardsAcc ++ [ Turned updatedStyle w tob oc h ], cardCmd :: cmdAcc )
 
 
-transferOverStyles : List Card -> List Card -> ( List Card, Maybe Hash )
+transferOverStyles : List GameCard -> List GameCard -> ( List GameCard, Maybe Hash )
 transferOverStyles oldCards newCards =
     newCards
         |> List.map
@@ -462,7 +470,7 @@ type SpecificWiggle
     = SpecificWiggle Float Animation.Length Animation.Length Animation.Angle
 
 
-cardBelongsToTeam : Card -> Team -> Bool
+cardBelongsToTeam : GameCard -> Team -> Bool
 cardBelongsToTeam card team =
     case card of
         UnTurned _ _ (OriginallyColored teamCheck) _ ->
@@ -472,7 +480,7 @@ cardBelongsToTeam card team =
             team == teamCheck
 
 
-sameCard : Card -> Card -> Bool
+sameCard : GameCard -> GameCard -> Bool
 sameCard c1 c2 =
     case c1 of
         UnTurned _ _ _ hash ->
@@ -482,7 +490,7 @@ sameCard c1 c2 =
             cardMatchesHash c2 hash
 
 
-cardMatchesHash : Card -> Hash -> Bool
+cardMatchesHash : GameCard -> Hash -> Bool
 cardMatchesHash card hash1 =
     case card of
         UnTurned _ _ _ hash2 ->

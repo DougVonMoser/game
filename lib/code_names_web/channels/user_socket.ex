@@ -15,8 +15,12 @@ defmodule CodeNamesWeb.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(_params, socket, _connect_info) do
-    {:ok, socket}
+
+  def connect(%{"token" => token}, socket, _connect_info) do
+    # im converting whatever the client cames as its identifier as the user_id here 
+    # this could change if users start to get logins
+    # fine for now
+    {:ok, assign(socket, :user_id, token)}
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:

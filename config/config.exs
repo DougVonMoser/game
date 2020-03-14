@@ -14,6 +14,10 @@ config :code_names, CodeNamesWeb.Endpoint,
   render_errors: [view: CodeNamesWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: CodeNames.PubSub, adapter: Phoenix.PubSub.PG2]
 
+config :code_names, CodeNames.Presence,
+  pubsub_server: CodeNames.PubSub,
+  heartbeat_interval: 500
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

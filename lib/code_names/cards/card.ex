@@ -1,4 +1,4 @@
-defmodule Codenames.Cards.Card do
+defmodule CodeNames.Cards.Card do
   @doc """
   word is a random word
   original_color can be red | blue | no_team

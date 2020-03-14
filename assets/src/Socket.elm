@@ -4,6 +4,14 @@ import Json.Decode as D
 import Json.Encode as E
 
 
+
+--type EventsElmCanEmit
+--    = CreateNewRoom
+--    | JoinExistingRoom
+--    | ReturnToWelcomeScreen
+--    | ClickedHash
+
+
 port toSocket : E.Value -> Cmd msg
 
 

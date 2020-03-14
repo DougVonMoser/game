@@ -15,6 +15,7 @@ import Socket exposing (..)
 
 type Model
     = ChoosingHowToStartGame (Maybe Room) String
+    | InLobby Room
     | InGame Room Game.Model
     | InCodeGiver Room CodeGiver.Model
 
@@ -29,6 +30,7 @@ type Room
 
 type Msg
     = ServerSentData D.Value
+      --| ServerSentLatestCards
     | UserClickedCreateNewGame
     | UserClickedImNotAnAdmin
     | UserClickedImAnAdmin
@@ -82,14 +84,21 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        --        ServerSentData x ->
+        --            case model of
+        --                ChoosingHowToStartGame (Just room) _ ->
+        --                    let
+        --                        ( gameModel, cmd ) =
+        --                            Game.decodeCardsFromServer Game.initModel x
+        --                    in
+        --                    ( InLobby room gameModel, Cmd.map (always NOOP) cmd )
+        --
+        --                _ ->
+        --                    ( model, Cmd.none )
         ServerSentData x ->
             case model of
                 ChoosingHowToStartGame (Just room) _ ->
-                    let
-                        ( gameModel, cmd ) =
-                            Game.decodeCardsFromServer Game.initModel x
-                    in
-                    ( InGame room gameModel, Cmd.map (always NOOP) cmd )
+                    ( InLobby room, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -154,6 +163,13 @@ toolbarView model =
         ChoosingHowToStartGame _ _ ->
             text ""
 
+        InLobby (Room room) ->
+            div [ class "toolbar" ]
+                [ button [ onClick UserClickedImAnAdmin ] [ text "I'm giving clues this round!" ]
+                , button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
+                , span [] [ text <| "in room " ++ room ]
+                ]
+
         InGame (Room room) _ ->
             div [ class "toolbar" ]
                 [ button [ onClick UserClickedImAnAdmin ] [ text "I'm giving clues this round!" ]
@@ -169,6 +185,7 @@ toolbarView model =
                 ]
 
 
+bodyView : Model -> Html Msg
 bodyView model =
     case model of
         ChoosingHowToStartGame maybeRoom roomTypings ->
@@ -183,6 +200,9 @@ bodyView model =
                     ]
                 , div [ class "gif" ] [ img [ src "https://s3.amazonaws.com/dougvonmoser.com/commonplace.gif" ] [] ]
                 ]
+
+        InLobby room ->
+            h1 [] [ text " WELCOME TO THE LOBBY " ]
 
         InCodeGiver _ codeGiverModel ->
             Html.map GotCodeGiverMsg <| CodeGiver.view codeGiverModel
@@ -230,6 +250,9 @@ socketHandler model rawCards =
             GotGameMsg (Game.ReceivedCardsFromServer rawCards)
 
         ChoosingHowToStartGame _ _ ->
+            ServerSentData rawCards
+
+        InLobby _ ->
             ServerSentData rawCards
 
 

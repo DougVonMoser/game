@@ -18,7 +18,7 @@ import Socket exposing (..)
 
 
 type alias Model =
-    { cards : List Card
+    { cards : List GameCard
     }
 
 
@@ -138,7 +138,7 @@ adminBarView model =
     div [ onClick TriggerRestart ] [ text "new game" ]
 
 
-cardView : Card -> Html AdminMsg
+cardView : GameCard -> Html AdminMsg
 cardView card =
     case card of
         UnTurned _ (Word word) (OriginallyColored team) hash ->

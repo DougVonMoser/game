@@ -1,6 +1,7 @@
 defmodule CodeNamesWeb.RoomChannel do
   use Phoenix.Channel
 
+  alias CodeNames.Presence
   alias CodeNames.GameServer
 
   def join("room:lobby", _message, socket) do
@@ -8,7 +9,13 @@ defmodule CodeNamesWeb.RoomChannel do
   end
 
   def join("room:" <> game_room, _message, socket) do
-    game_room = String.to_atom(game_room) |> IO.inspect(label: "this is the game_rrom name atom")
+    game_room = String.to_atom(game_room)
+
+    user_id = socket.assigns.user_id
+
+    {:ok, _} = Presence.track(socket, user_id, %{online_at: inspect(:os.timestamp())})
+
+    Presence.list(socket) |> IO.inspect(label: "the presences?")
 
     case GenServer.start(CodeNames.GameServer, [], name: game_room) do
       {:ok, _pid} ->
@@ -22,11 +29,9 @@ defmodule CodeNamesWeb.RoomChannel do
   end
 
   def handle_in("elmSaysJoinExistingRoom", msg, socket) do
-    IO.inspect("elmSaysJoinExistingRoom")
-    IO.inspect(msg)
+    # IO.inspect("elmSaysJoinExistingRoom")
 
-    game_room =
-      msg["room"] |> String.to_atom() |> IO.inspect(label: "this is the game_rrom name atom")
+    game_room = msg["room"] |> String.to_atom()
 
     case GenServer.whereis(game_room) do
       nil ->
@@ -41,22 +46,23 @@ defmodule CodeNamesWeb.RoomChannel do
   end
 
   def handle_in("elmSaysCreateNewRoom", _msg, socket) do
-    IO.inspect("elmSaysCreateNewRoom")
-    IO.inspect(socket)
-    new_room = generate_new_random_room()
+    # IO.inspect("elmSaysCreateNewRoom")
+
+    new_room = generate_new_random_room_string()
+
     push(socket, "channelReplyingWithNewGameStarting", %{room: new_room})
 
     {:noreply, socket}
   end
 
   def handle_in("clicked", msg, socket) do
-    IO.inspect(socket)
+    # IO.inspect("clicked")
     clicked_hash = msg["body"]
     "room:" <> room = socket.topic
     room = room |> String.upcase() |> String.to_existing_atom()
 
     updated_cards = GameServer.turn_card(room, clicked_hash)
-    IO.inspect("broadcasting!")
+
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
   end
@@ -66,11 +72,12 @@ defmodule CodeNamesWeb.RoomChannel do
     room = room |> String.upcase() |> String.to_existing_atom()
 
     updated_cards = GameServer.restart(room)
+
     broadcast!(socket, "updateFromServer", %{cards: updated_cards})
     {:noreply, socket}
   end
 
-  defp generate_new_random_room() do
+  defp generate_new_random_room_string() do
     random_new_room = for n <- ?A..?Z, do: <<n::utf8>>
 
     random_new_room |> Enum.shuffle() |> Enum.take(4) |> List.to_string()
