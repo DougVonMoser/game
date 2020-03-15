@@ -64,15 +64,28 @@ function joinLobby () {
     reListenForUpdates()
 }
 
-function joinGameRoom (msg) {
-    //console.log("channel replying with new game starting ")
-    //console.log(msg)
-    channel = socket.channel("room:" + msg.room, {token: global_user_token})
+function createGameRoom (name) {
+    let room = generateRoomName();
+    channel = socket.channel("room:" + room, {name: name, token: global_user_token})
     channel.join()
    .receive("ok", resp => {
         //console.log("successfully joined new channel, got from server")
         //console.log(resp)
-        app.ports.joinedDifferentRoom.send({room : msg.room})
+        app.ports.joinedDifferentRoom.send({room : room})
+    })   
+    reListenForUpdates()
+}
+
+
+function joinGameRoom (room, playerName) {
+    //console.log("channel replying with new game starting ")
+    //console.log(msg)
+    channel = socket.channel("room:" + room, {name: playerName, token: global_user_token})
+    channel.join()
+   .receive("ok", resp => {
+        //console.log("successfully joined new channel, got from server")
+        //console.log(resp)
+        app.ports.joinedDifferentRoom.send({name: playerName, room : room})
     })   
     reListenForUpdates()
 }
@@ -98,13 +111,23 @@ app.ports.alsoToSocket.subscribe(message => {
 app.ports.toSocket.subscribe(message => {
     if (message.action == "elmSaysCreateNewRoom"){
         //console.log("trying to do create new room")
-        channel.push("elmSaysCreateNewRoom", {name: message.room})
+        createGameRoom(message.name)
+        //channel.push("elmSaysCreateNewRoom", {name: message.room})
     } else if (message.action == "elmSaysJoinExistingRoom") {
         //console.log("trying to do join existing room", message.room)
-        channel.push("elmSaysJoinExistingRoom", {name: message.name, room: message.room})
+        joinGameRoom(message.room, message.name)
     } else if (message.action == "elmSaysStartCardGame") {
         channel.push("elmSaysStartCardGame", {})
     }
 })
 
 //channel.push("restart", {})
+function generateRoomName(length) {
+   var result           = '';
+   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+   var charactersLength = characters.length;
+   for ( var i = 0; i < 4; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+   }
+   return result;
+}
