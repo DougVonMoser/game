@@ -3,7 +3,12 @@ defmodule CodeNames.Presence do
 
   def fetch(_topic, entries) do
     for {key, %{metas: metas}} <- entries, into: %{} do
-      {key, %{metas: metas, name: "chris"}}
+      name =
+        metas
+        |> List.first()
+        |> Map.get(:name)
+
+      {key, %{metas: metas, name: name}}
     end
   end
 end

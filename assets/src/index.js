@@ -98,10 +98,10 @@ app.ports.alsoToSocket.subscribe(message => {
 app.ports.toSocket.subscribe(message => {
     if (message.action == "elmSaysCreateNewRoom"){
         //console.log("trying to do create new room")
-        channel.push("elmSaysCreateNewRoom", {})
+        channel.push("elmSaysCreateNewRoom", {name: message.room})
     } else if (message.action == "elmSaysJoinExistingRoom") {
         //console.log("trying to do join existing room", message.room)
-        channel.push("elmSaysJoinExistingRoom", {room: message.room})
+        channel.push("elmSaysJoinExistingRoom", {name: message.name, room: message.room})
     } else if (message.action == "elmSaysStartCardGame") {
         channel.push("elmSaysStartCardGame", {})
     }

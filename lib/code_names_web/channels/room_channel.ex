@@ -8,17 +8,20 @@ defmodule CodeNamesWeb.RoomChannel do
     {:ok, "omg hello from roomchannel! welcome! anything to drink?", socket}
   end
 
-  def join("room:" <> game_room, _message, socket) do
-    send(self(), :after_join)
+  def join("room:" <> game_room, msg, socket) do
+    name = Map.get(msg, "name", "DEFAULT_HARD_CODED_NAME") |> IO.inspect(label: "LOOK AT DIS")
+
+    send(self(), {:after_join, name})
     _ = GenServer.start(CodeNames.GameServer, [], name: String.to_atom(game_room))
     {:ok, :waitforitwaitforitwait, socket}
   end
 
-  def handle_info(:after_join, socket) do
+  def handle_info({:after_join, name}, socket) do
     # push(socket, "presence_state", Presence.list(socket))
 
     {:ok, _} =
       Presence.track(socket, socket.assigns.user_id, %{
+        name: name,
         online_at: inspect(System.system_time(:second))
       })
 

@@ -15,7 +15,7 @@ import Socket
 
 
 type Model
-    = ChoosingHowToStartGame (Maybe Room) String
+    = ChoosingHowToStartGame (Maybe Room) String String
     | InLobby Room (List Player)
     | InGame Room Game.Model
     | InCodeGiver Room CodeGiver.Model
@@ -26,7 +26,7 @@ type Me
 
 
 init _ =
-    ( ChoosingHowToStartGame Nothing "", Cmd.none )
+    ( ChoosingHowToStartGame Nothing "" "", Cmd.none )
 
 
 type Room
@@ -45,6 +45,7 @@ type Msg
     | GotGameMsg Game.Msg
     | JoinedDifferentRoom Room
     | UserTypedRoomToEnter String
+    | UserTypedTheirName String
     | UserClickedJoinGame
     | NOOP
 
@@ -115,8 +116,16 @@ update msg model =
 
         UserTypedRoomToEnter s ->
             case model of
-                ChoosingHowToStartGame maybeRoom roomTypings ->
-                    ( ChoosingHowToStartGame maybeRoom <| String.toUpper s, Cmd.none )
+                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
+                    ( ChoosingHowToStartGame maybeRoom (String.toUpper s) roomNameTypings, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        UserTypedTheirName s ->
+            case model of
+                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
+                    ( ChoosingHowToStartGame maybeRoom roomTypings s, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -135,7 +144,7 @@ update msg model =
         UserClickedImInTheWrongGame ->
             case model of
                 _ ->
-                    ( ChoosingHowToStartGame Nothing "", Socket.joinLobby <| E.string "joindatlobby" )
+                    ( ChoosingHowToStartGame Nothing "" "", Socket.joinLobby <| E.string "joindatlobby" )
 
         UserClickedImAnAdmin ->
             case model of
@@ -159,7 +168,7 @@ update msg model =
 
         ServerSentData x ->
             case model of
-                ChoosingHowToStartGame (Just room) _ ->
+                ChoosingHowToStartGame (Just room) _ _ ->
                     ( InLobby room [], Cmd.none )
 
                 InLobby room _ ->
@@ -174,12 +183,13 @@ update msg model =
 
         UserClickedJoinGame ->
             case model of
-                ChoosingHowToStartGame Nothing roomTypings ->
-                    ( ChoosingHowToStartGame Nothing roomTypings
+                ChoosingHowToStartGame Nothing roomTypings roomNameTypings ->
+                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings
                     , Socket.toSocket <|
                         E.object
                             [ ( "action", E.string "elmSaysJoinExistingRoom" )
                             , ( "room", E.string roomTypings )
+                            , ( "name", E.string roomNameTypings )
                             ]
                     )
 
@@ -187,12 +197,18 @@ update msg model =
                     ( model, Cmd.none )
 
         UserClickedCreateNewGame ->
-            ( ChoosingHowToStartGame Nothing ""
-            , Socket.toSocket <|
-                E.object
-                    [ ( "action", E.string "elmSaysCreateNewRoom" )
-                    ]
-            )
+            case model of
+                ChoosingHowToStartGame Nothing roomTypings roomNameTypings ->
+                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings
+                    , Socket.toSocket <|
+                        E.object
+                            [ ( "action", E.string "elmSaysCreateNewRoom" )
+                            , ( "name", E.string roomNameTypings )
+                            ]
+                    )
+
+                _ ->
+                    ( model, Cmd.none )
 
         GotCodeGiverMsg msgCG ->
             case model of
@@ -229,7 +245,7 @@ view model =
 toolbarView : Model -> Html Msg
 toolbarView model =
     case model of
-        ChoosingHowToStartGame _ _ ->
+        ChoosingHowToStartGame _ _ _ ->
             text ""
 
         InLobby (Room room) playerSet ->
@@ -257,9 +273,13 @@ toolbarView model =
 bodyView : Model -> Html Msg
 bodyView model =
     case model of
-        ChoosingHowToStartGame maybeRoom roomTypings ->
+        ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
             div [ class "home-container" ]
                 [ div [ class "join" ]
+                    [ h1 [] [ text "Your name" ]
+                    , input [ onInput UserTypedTheirName, maxlength 12, value roomNameTypings ] []
+                    ]
+                , div [ class "join" ]
                     [ h1 [] [ text "Game Code" ]
                     , input [ onInput UserTypedRoomToEnter, maxlength 4, value roomTypings ] []
                     , joinButton roomTypings
@@ -340,7 +360,7 @@ socketHandler model rawAction =
                                 InGame _ _ ->
                                     GotGameMsg (Game.ReceivedCardsFromServer rawValue)
 
-                                ChoosingHowToStartGame _ _ ->
+                                ChoosingHowToStartGame _ _ _ ->
                                     ServerSentData rawValue
 
                                 InLobby _ _ ->
@@ -397,7 +417,7 @@ subscriptions model =
             ]
     in
     case model of
-        ChoosingHowToStartGame _ _ ->
+        ChoosingHowToStartGame _ _ _ ->
             Sub.batch sockets
 
         InGame _ gameModel ->
