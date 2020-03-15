@@ -21,6 +21,10 @@ type Model
     | InCodeGiver Room CodeGiver.Model
 
 
+type Me
+    = Me Player
+
+
 init _ =
     ( ChoosingHowToStartGame Nothing "", Cmd.none )
 
@@ -31,6 +35,7 @@ type Room
 
 type Msg
     = ServerSentData D.Value
+    | PresenceState (List Player)
       --| ServerSentLatestCards
     | UserClickedCreateNewGame
     | UserClickedImNotAnAdmin
@@ -48,6 +53,11 @@ type Player
     = Player String PlayerHash
 
 
+isThisPlayer : Player -> Player -> Bool
+isThisPlayer (Player _ (PlayerHash hash)) (Player _ (PlayerHash hash2)) =
+    hash == hash2
+
+
 flip f y x =
     f x y
 
@@ -55,6 +65,11 @@ flip f y x =
 playerDecoder : ( String, String ) -> Player
 playerDecoder ( id, name ) =
     Player name (PlayerHash id)
+
+
+getPlayerName : Player -> String
+getPlayerName (Player name _) =
+    name
 
 
 playersDecoder =
@@ -66,6 +81,21 @@ presenceStateDecoder =
     D.field "value" playersDecoder
 
 
+presenceDiffDecoder =
+    D.field "value"
+        (D.field "leaves" playersDecoder
+            |> D.andThen
+                (\x ->
+                    case x of
+                        onlyOnePlayer :: [] ->
+                            D.succeed onlyOnePlayer
+
+                        _ ->
+                            D.fail "COULLLDJFLSK"
+                )
+        )
+
+
 type PlayerHash
     = PlayerHash String
 
@@ -74,6 +104,14 @@ update msg model =
     case msg of
         NOOP ->
             ( model, Cmd.none )
+
+        PresenceState playerList ->
+            case model of
+                InLobby room existingPlayersIfAny ->
+                    ( InLobby room playerList, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
         UserTypedRoomToEnter s ->
             case model of
@@ -84,7 +122,7 @@ update msg model =
                     ( model, Cmd.none )
 
         JoinedDifferentRoom room ->
-            ( ChoosingHowToStartGame (Just room) "", Cmd.none )
+            ( InLobby room [], Cmd.none )
 
         UserClickedImInTheWrongGame ->
             case model of
@@ -228,14 +266,25 @@ bodyView model =
                 , div [ class "gif" ] [ img [ src "https://s3.amazonaws.com/dougvonmoser.com/commonplace.gif" ] [] ]
                 ]
 
-        InLobby room playerSet ->
-            h1 [] [ text " WELCOME TO THE LOBBY " ]
+        InLobby room playerList ->
+            div []
+                [ h1 [] [ text " WELCOME TO THE LOBBY " ]
+                , playerGridView playerList
+                ]
 
         InCodeGiver _ codeGiverModel ->
             Html.map GotCodeGiverMsg <| CodeGiver.view codeGiverModel
 
         InGame _ gameModel ->
             Html.map GotGameMsg <| Game.view gameModel
+
+
+playerGridView playerList =
+    let
+        f =
+            div [] << List.singleton << text << getPlayerName
+    in
+    div [] <| List.map f playerList
 
 
 joinButton roomTypings =
@@ -296,7 +345,27 @@ socketHandler model rawAction =
                             NOOP
 
                 "presence_state" ->
-                    NOOP
+                    case D.decodeValue presenceStateDecoder rawAction of
+                        Ok playerList ->
+                            PresenceState playerList
+
+                        Err _ ->
+                            NOOP
+
+                "presence_diff" ->
+                    case model of
+                        InLobby room playerList ->
+                            case D.decodeValue presenceDiffDecoder rawAction of
+                                Ok player ->
+                                    PresenceState <|
+                                        List.filter (not << isThisPlayer player) playerList
+
+                                Err e ->
+                                    -- this gets hit when the diff is anything but one player leaving
+                                    NOOP
+
+                        _ ->
+                            NOOP
 
                 _ ->
                     NOOP

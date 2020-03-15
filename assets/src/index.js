@@ -33,9 +33,12 @@ function reListenForUpdates () {
         joinGameRoom(msg)
     })
     channel.on("presence_diff", msg => {
+        // ignoring for now, broadcasting full new presences
+        // each time someone joins. 
+        //
         console.log(" i guess this is a presence diff")
-        app.ports.fromSocket.send({type: "presence_diff", value: msg})
         console.log(msg)
+        app.ports.fromSocket.send({type: "presence_diff", value: msg})
     })
     channel.on("presence_state", msg => {
         console.log(" i guess this is a presence state")

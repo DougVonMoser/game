@@ -12,7 +12,7 @@ import Test.Html.Selector exposing (tag, text)
 
 
 serverEventDecoderTest =
-    describe "decoding events from the server"
+    describe "decoding player things from the server"
         [ test "single player" <|
             \() ->
                 ( "fake-thjingaj-adsjfkja-123jkj231kj1", "pete" )
