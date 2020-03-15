@@ -9,23 +9,31 @@ defmodule CodeNamesWeb.RoomChannel do
   end
 
   def join("room:" <> game_room, _message, socket) do
-    game_room = String.to_atom(game_room)
+    send(self(), :after_join)
+    _ = GenServer.start(CodeNames.GameServer, [], name: String.to_atom(game_room))
+    {:ok, :waitforitwaitforitwait, socket}
 
-    user_id = socket.assigns.user_id
+    # game_room = String.to_atom(game_room)
+    # case GenServer.start(CodeNames.GameServer, [], name: game_room) do
+    #   {:ok, _pid} ->
+    #     IO.inspect("started new Genserver #{inspect(game_room)}")
+    #     {:ok, GameServer.get_cards(game_room), socket}
 
-    {:ok, _} = Presence.track(socket, user_id, %{online_at: inspect(:os.timestamp())})
+    #   {:error, {:already_started, _pid}} ->
+    #     IO.inspect("already started Genserver #{inspect(game_room)}")
+    #     {:ok, GameServer.get_cards(game_room), socket}
+    # end
+  end
 
-    Presence.list(socket) |> IO.inspect(label: "the presences?")
+  def handle_info(:after_join, socket) do
+    push(socket, "presence_state", Presence.list(socket))
 
-    case GenServer.start(CodeNames.GameServer, [], name: game_room) do
-      {:ok, _pid} ->
-        IO.inspect("started new Genserver #{inspect(game_room)}")
-        {:ok, GameServer.get_cards(game_room), socket}
+    {:ok, _} =
+      Presence.track(socket, socket.assigns.user_id, %{
+        online_at: inspect(System.system_time(:second))
+      })
 
-      {:error, {:already_started, _pid}} ->
-        IO.inspect("already started Genserver #{inspect(game_room)}")
-        {:ok, GameServer.get_cards(game_room), socket}
-    end
+    {:noreply, socket}
   end
 
   def handle_in("elmSaysJoinExistingRoom", msg, socket) do

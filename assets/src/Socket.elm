@@ -21,6 +21,9 @@ port joinLobby : E.Value -> Cmd msg
 port fromSocket : (D.Value -> msg) -> Sub msg
 
 
+port notBeingUsed : (String -> msg) -> Sub msg
+
+
 port joinedDifferentRoom : (D.Value -> msg) -> Sub msg
 
 

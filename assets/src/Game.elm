@@ -46,12 +46,10 @@ init _ =
 
 
 
--- type ServerCard
-
-
-type TurnedStatus
-    = NotTurned
-    | IsTurned Team
+-- type TurnedStatus
+--     = NotTurned
+--     | IsTurned Team
+--
 
 
 type GameCard
@@ -343,6 +341,7 @@ cardsDecoder =
     D.list cardDecoder
 
 
+cardDecoder : D.Decoder GameCard
 cardDecoder =
     at [ "turned_over_by" ] (D.nullable string)
         |> D.andThen

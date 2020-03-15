@@ -10,12 +10,13 @@ import Html.Events exposing (onClick, onInput)
 import Http exposing (Error(..))
 import Json.Decode as D exposing (Decoder, at, string)
 import Json.Encode as E exposing (Value)
+import List exposing (..)
 import Socket
 
 
 type Model
     = ChoosingHowToStartGame (Maybe Room) String
-    | InLobby Room
+    | InLobby Room (List Player)
     | InGame Room Game.Model
     | InCodeGiver Room CodeGiver.Model
 
@@ -41,6 +42,32 @@ type Msg
     | UserTypedRoomToEnter String
     | UserClickedJoinGame
     | NOOP
+
+
+type Player
+    = Player String PlayerHash
+
+
+flip f y x =
+    f x y
+
+
+playerDecoder : ( String, String ) -> Player
+playerDecoder ( id, name ) =
+    Player name (PlayerHash id)
+
+
+playersDecoder =
+    D.keyValuePairs (D.field "name" D.string)
+        |> D.map (List.map playerDecoder)
+
+
+presenceStateDecoder =
+    D.field "value" playersDecoder
+
+
+type PlayerHash
+    = PlayerHash String
 
 
 update msg model =
@@ -98,7 +125,7 @@ update msg model =
         ServerSentData x ->
             case model of
                 ChoosingHowToStartGame (Just room) _ ->
-                    ( InLobby room, Cmd.none )
+                    ( InLobby room [], Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -163,7 +190,7 @@ toolbarView model =
         ChoosingHowToStartGame _ _ ->
             text ""
 
-        InLobby (Room room) ->
+        InLobby (Room room) playerSet ->
             div [ class "toolbar" ]
                 [ button [ onClick UserClickedImAnAdmin ] [ text "I'm giving clues this round!" ]
                 , button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
@@ -201,7 +228,7 @@ bodyView model =
                 , div [ class "gif" ] [ img [ src "https://s3.amazonaws.com/dougvonmoser.com/commonplace.gif" ] [] ]
                 ]
 
-        InLobby room ->
+        InLobby room playerSet ->
             h1 [] [ text " WELCOME TO THE LOBBY " ]
 
         InCodeGiver _ codeGiverModel ->
@@ -240,20 +267,42 @@ main =
         }
 
 
+
+-- socketHandler has to decode the {type: "action", value: [{stuff: things}]}
+
+
 socketHandler : Model -> D.Value -> Msg
-socketHandler model rawCards =
-    case model of
-        InCodeGiver _ _ ->
-            GotCodeGiverMsg (CodeGiver.Hey rawCards)
+socketHandler model rawAction =
+    case D.decodeValue (D.field "type" D.string) rawAction of
+        Ok val ->
+            case val of
+                "latestCards" ->
+                    case D.decodeValue (D.field "value" D.value) rawAction of
+                        Ok rawValue ->
+                            case model of
+                                InCodeGiver _ _ ->
+                                    GotCodeGiverMsg (CodeGiver.Hey rawValue)
 
-        InGame _ _ ->
-            GotGameMsg (Game.ReceivedCardsFromServer rawCards)
+                                InGame _ _ ->
+                                    GotGameMsg (Game.ReceivedCardsFromServer rawValue)
 
-        ChoosingHowToStartGame _ _ ->
-            ServerSentData rawCards
+                                ChoosingHowToStartGame _ _ ->
+                                    ServerSentData rawValue
 
-        InLobby _ ->
-            ServerSentData rawCards
+                                InLobby _ _ ->
+                                    ServerSentData rawValue
+
+                        Err _ ->
+                            NOOP
+
+                "presence_state" ->
+                    NOOP
+
+                _ ->
+                    NOOP
+
+        Err _ ->
+            NOOP
 
 
 roomDecoding raw =
@@ -265,6 +314,7 @@ roomDecoding raw =
             JoinedDifferentRoom <| Room "ERROR"
 
 
+subscriptions : Model -> Sub Msg
 subscriptions model =
     let
         sockets =
@@ -284,3 +334,8 @@ subscriptions model =
 
         _ ->
             Sub.batch sockets
+
+
+
+-- DECODERS
+

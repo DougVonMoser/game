@@ -3,7 +3,7 @@ defmodule CodeNames.Presence do
 
   def fetch(_topic, entries) do
     for {key, %{metas: metas}} <- entries, into: %{} do
-      {key, %{metas: metas, user: %{name: "chris"}}}
+      {key, %{metas: metas, name: "chris"}}
     end
   end
 end
