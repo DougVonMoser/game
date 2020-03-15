@@ -157,16 +157,6 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        --ServerSentData x ->
-        --    case model of
-        --        ChoosingHowToStartGame (Just room) _ ->
-        --            let
-        --                ( gameModel, cmd ) =
-        --                    Game.decodeCardsFromServer Game.initModel x
-        --            in
-        --            ( InLobby room gameModel, Cmd.map (always NOOP) cmd )
-        --        _ ->
-        --            ( model, Cmd.none )
         ServerSentData x ->
             case model of
                 ChoosingHowToStartGame (Just room) _ ->

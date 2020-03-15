@@ -12,17 +12,6 @@ defmodule CodeNamesWeb.RoomChannel do
     send(self(), :after_join)
     _ = GenServer.start(CodeNames.GameServer, [], name: String.to_atom(game_room))
     {:ok, :waitforitwaitforitwait, socket}
-
-    # game_room = String.to_atom(game_room)
-    # case GenServer.start(CodeNames.GameServer, [], name: game_room) do
-    #   {:ok, _pid} ->
-    #     IO.inspect("started new Genserver #{inspect(game_room)}")
-    #     {:ok, GameServer.get_cards(game_room), socket}
-
-    #   {:error, {:already_started, _pid}} ->
-    #     IO.inspect("already started Genserver #{inspect(game_room)}")
-    #     {:ok, GameServer.get_cards(game_room), socket}
-    # end
   end
 
   def handle_info(:after_join, socket) do
