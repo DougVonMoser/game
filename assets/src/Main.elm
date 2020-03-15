@@ -36,7 +36,7 @@ type Room
 type Msg
     = ServerSentData D.Value
     | PresenceState (List Player)
-      --| ServerSentLatestCards
+    | UserClickedStartCardGame --| ServerSentLatestCards
     | UserClickedCreateNewGame
     | UserClickedImNotAnAdmin
     | UserClickedImAnAdmin
@@ -124,6 +124,14 @@ update msg model =
         JoinedDifferentRoom room ->
             ( InLobby room [], Cmd.none )
 
+        UserClickedStartCardGame ->
+            ( model
+            , Socket.toSocket <|
+                E.object
+                    [ ( "action", E.string "elmSaysStartCardGame" )
+                    ]
+            )
+
         UserClickedImInTheWrongGame ->
             case model of
                 _ ->
@@ -149,21 +157,27 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        --        ServerSentData x ->
-        --            case model of
-        --                ChoosingHowToStartGame (Just room) _ ->
-        --                    let
-        --                        ( gameModel, cmd ) =
-        --                            Game.decodeCardsFromServer Game.initModel x
-        --                    in
-        --                    ( InLobby room gameModel, Cmd.map (always NOOP) cmd )
-        --
-        --                _ ->
-        --                    ( model, Cmd.none )
+        --ServerSentData x ->
+        --    case model of
+        --        ChoosingHowToStartGame (Just room) _ ->
+        --            let
+        --                ( gameModel, cmd ) =
+        --                    Game.decodeCardsFromServer Game.initModel x
+        --            in
+        --            ( InLobby room gameModel, Cmd.map (always NOOP) cmd )
+        --        _ ->
+        --            ( model, Cmd.none )
         ServerSentData x ->
             case model of
                 ChoosingHowToStartGame (Just room) _ ->
                     ( InLobby room [], Cmd.none )
+
+                InLobby room _ ->
+                    let
+                        ( gameModel, cmd ) =
+                            Game.decodeCardsFromServer Game.initModel x
+                    in
+                    ( InGame room gameModel, Cmd.map GotGameMsg cmd )
 
                 _ ->
                     ( model, Cmd.none )
@@ -270,6 +284,7 @@ bodyView model =
             div []
                 [ h1 [] [ text " WELCOME TO THE LOBBY " ]
                 , playerGridView playerList
+                , button [ onClick UserClickedStartCardGame ] [ text "START CARD GAME" ]
                 ]
 
         InCodeGiver _ codeGiverModel ->

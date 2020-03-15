@@ -23,6 +23,11 @@ channel.join()
 reListenForUpdates()
 
 function reListenForUpdates () {
+    channel.on("signalToStartGameWithCards", msg => {
+        //console.log("updateFromServer got ")
+        //console.log(msg.cards)
+        app.ports.fromSocket.send({type: "latestCards", value: msg.cards})
+    })    
     channel.on("updateFromServer", msg => {
         //console.log("updateFromServer got ")
         //console.log(msg.cards)
@@ -68,7 +73,6 @@ function joinGameRoom (msg) {
         //console.log("successfully joined new channel, got from server")
         //console.log(resp)
         app.ports.joinedDifferentRoom.send({room : msg.room})
-        app.ports.fromSocket.send({type: "latestCards", value: resp})
     })   
     reListenForUpdates()
 }
@@ -98,8 +102,9 @@ app.ports.toSocket.subscribe(message => {
     } else if (message.action == "elmSaysJoinExistingRoom") {
         //console.log("trying to do join existing room", message.room)
         channel.push("elmSaysJoinExistingRoom", {room: message.room})
+    } else if (message.action == "elmSaysStartCardGame") {
+        channel.push("elmSaysStartCardGame", {})
     }
-
 })
 
 //channel.push("restart", {})

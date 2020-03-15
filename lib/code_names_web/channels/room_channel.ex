@@ -37,6 +37,24 @@ defmodule CodeNamesWeb.RoomChannel do
     {:noreply, socket}
   end
 
+  def handle_in("elmSaysStartCardGame", _msg, socket) do
+    IO.inspect("elmSaysStartCardGame")
+    "room:" <> room = socket.topic
+    room = room |> String.upcase() |> String.to_existing_atom()
+
+    case GenServer.start(CodeNames.GameServer, [], name: room) do
+      {:ok, _pid} ->
+        cards = GameServer.get_cards(room)
+        broadcast!(socket, "signalToStartGameWithCards", %{cards: cards})
+        {:noreply, socket}
+
+      {:error, {:already_started, _pid}} ->
+        cards = GameServer.get_cards(room)
+        broadcast!(socket, "signalToStartGameWithCards", %{cards: cards})
+        {:noreply, socket}
+    end
+  end
+
   def handle_in("elmSaysJoinExistingRoom", msg, socket) do
     # IO.inspect("elmSaysJoinExistingRoom")
 
