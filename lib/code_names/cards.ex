@@ -17,16 +17,16 @@ defmodule CodeNames.Cards do
   def red_and_blues_and_grays do
     ["red", "blue"]
     |> Enum.shuffle()
-    |> Enum.zip([9, 8])
+    |> Enum.zip([6, 5])
     |> Enum.map(fn {color, count} -> List.duplicate(color, count) end)
     |> Enum.concat()
-    |> Kernel.++(List.duplicate("gray", 8))
+    |> Kernel.++(List.duplicate("gray", 5))
   end
 
   def twenty_five_static_real_words do
     ExhaustiveWordList.words()
     |> Enum.uniq()
     |> Enum.shuffle()
-    |> Enum.take(25)
+    |> Enum.take(16)
   end
 end
