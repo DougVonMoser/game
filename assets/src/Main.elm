@@ -14,19 +14,31 @@ import List exposing (..)
 import Socket
 
 
+type alias RoomTypings =
+    String
+
+
+type alias RoomNameTypings =
+    String
+
+
+type alias MyHash =
+    PlayerHash
+
+
 type Model
-    = ChoosingHowToStartGame (Maybe Room) String String
+    = ChoosingHowToStartGame (Maybe Room) RoomTypings RoomNameTypings MyHash
     | InLobby Room (List Player)
     | InGame Room Game.Model
     | InCodeGiver Room CodeGiver.Model
 
 
-type Me
-    = Me Player
-
-
-init _ =
-    ( ChoosingHowToStartGame Nothing "" "", Cmd.none )
+init meHash =
+    let
+        ignoreme =
+            Debug.log "wtf" meHash
+    in
+    ( ChoosingHowToStartGame Nothing "" "" (PlayerHash meHash), Cmd.none )
 
 
 type Room
@@ -52,11 +64,21 @@ type Msg
 
 type Player
     = Player String PlayerHash
+    | Me String PlayerHash
 
 
 isThisPlayer : Player -> Player -> Bool
-isThisPlayer (Player _ (PlayerHash hash)) (Player _ (PlayerHash hash2)) =
-    hash == hash2
+isThisPlayer player1 player2 =
+    getPlayerHash player1 == getPlayerHash player2
+
+
+getPlayerHash player =
+    case player of
+        Player _ (PlayerHash hash) ->
+            hash
+
+        Me _ (PlayerHash hash) ->
+            hash
 
 
 flip f y x =
@@ -69,8 +91,13 @@ playerDecoder ( id, name ) =
 
 
 getPlayerName : Player -> String
-getPlayerName (Player name _) =
-    name
+getPlayerName player =
+    case player of
+        Player name _ ->
+            name
+
+        Me name _ ->
+            name
 
 
 playersDecoder =
@@ -116,16 +143,16 @@ update msg model =
 
         UserTypedRoomToEnter s ->
             case model of
-                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
-                    ( ChoosingHowToStartGame maybeRoom (String.toUpper s) roomNameTypings, Cmd.none )
+                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings meHash ->
+                    ( ChoosingHowToStartGame maybeRoom (String.toUpper s) roomNameTypings meHash, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
         UserTypedTheirName s ->
             case model of
-                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
-                    ( ChoosingHowToStartGame maybeRoom roomTypings s, Cmd.none )
+                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings meHash ->
+                    ( ChoosingHowToStartGame maybeRoom roomTypings s meHash, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -144,7 +171,7 @@ update msg model =
         UserClickedImInTheWrongGame ->
             case model of
                 _ ->
-                    ( ChoosingHowToStartGame Nothing "" "", Socket.joinLobby <| E.string "joindatlobby" )
+                    ( ChoosingHowToStartGame Nothing "" "" (PlayerHash "SHIT"), Socket.joinLobby <| E.string "joindatlobby" )
 
         UserClickedImAnAdmin ->
             case model of
@@ -168,7 +195,7 @@ update msg model =
 
         ServerSentData x ->
             case model of
-                ChoosingHowToStartGame (Just room) _ _ ->
+                ChoosingHowToStartGame (Just room) _ _ _ ->
                     ( InLobby room [], Cmd.none )
 
                 InLobby room _ ->
@@ -183,8 +210,8 @@ update msg model =
 
         UserClickedJoinGame ->
             case model of
-                ChoosingHowToStartGame Nothing roomTypings roomNameTypings ->
-                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings
+                ChoosingHowToStartGame Nothing roomTypings roomNameTypings meHash ->
+                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings meHash
                     , Socket.toSocket <|
                         E.object
                             [ ( "action", E.string "elmSaysJoinExistingRoom" )
@@ -198,8 +225,8 @@ update msg model =
 
         UserClickedCreateNewGame ->
             case model of
-                ChoosingHowToStartGame Nothing roomTypings roomNameTypings ->
-                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings
+                ChoosingHowToStartGame Nothing roomTypings roomNameTypings meHash ->
+                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings meHash
                     , Socket.toSocket <|
                         E.object
                             [ ( "action", E.string "elmSaysCreateNewRoom" )
@@ -245,7 +272,7 @@ view model =
 toolbarView : Model -> Html Msg
 toolbarView model =
     case model of
-        ChoosingHowToStartGame _ _ _ ->
+        ChoosingHowToStartGame _ _ _ _ ->
             text ""
 
         InLobby (Room room) playerSet ->
@@ -276,7 +303,7 @@ toolbarView model =
 bodyView : Model -> Html Msg
 bodyView model =
     case model of
-        ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
+        ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings meHash ->
             div [ class "home-container" ]
                 [ div [ class "join" ]
                     [ h1 [] [ text "Game Code" ]
@@ -329,7 +356,7 @@ joinButton roomTypings =
     button [ onClick onClickAction, class ("join-button" ++ disabledClass) ] [ text disabledText ]
 
 
-main : Program () Model Msg
+main : Program String Model Msg
 main =
     Browser.document
         { init = init
@@ -362,7 +389,7 @@ socketHandler model rawAction =
                                 InGame _ _ ->
                                     GotGameMsg (Game.ReceivedCardsFromServer rawValue)
 
-                                ChoosingHowToStartGame _ _ _ ->
+                                ChoosingHowToStartGame _ _ _ _ ->
                                     ServerSentData rawValue
 
                                 InLobby _ _ ->
@@ -419,7 +446,7 @@ subscriptions model =
             ]
     in
     case model of
-        ChoosingHowToStartGame _ _ _ ->
+        ChoosingHowToStartGame _ _ _ _ ->
             Sub.batch sockets
 
         InGame _ gameModel ->

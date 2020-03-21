@@ -18,8 +18,11 @@
         input {
 
             text-align: center;
-            font-size: 48px;
+            font-size: 32px;
             max-width: 70vw;
+            @media only screen and (min-width: 700px) {
+                font-size: 48px;
+            }
         }
         .join-button {
 

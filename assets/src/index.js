@@ -11,7 +11,8 @@ let socket = new Socket("/socket", {params: {token: global_user_token}})
 socket.connect()
 
 const Main = require('./Main.elm');
-let app = Main.Elm.Main.init({});
+console.log(global_user_token)
+let app = Main.Elm.Main.init({flags: global_user_token});
 
 
 let channel = socket.channel("room:lobby", {token: global_user_token});
