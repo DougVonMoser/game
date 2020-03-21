@@ -26,18 +26,18 @@ type alias MyHash =
     PlayerHash
 
 
+type alias MyPlayer =
+    Player
+
+
 type Model
     = ChoosingHowToStartGame (Maybe Room) RoomTypings RoomNameTypings MyHash
-    | InLobby Room (List Player)
+    | InLobby Room (List Player) MyPlayer
     | InGame Room Game.Model
     | InCodeGiver Room CodeGiver.Model
 
 
 init meHash =
-    let
-        ignoreme =
-            Debug.log "wtf" meHash
-    in
     ( ChoosingHowToStartGame Nothing "" "" (PlayerHash meHash), Cmd.none )
 
 
@@ -55,16 +55,20 @@ type Msg
     | UserClickedImInTheWrongGame
     | GotCodeGiverMsg CodeGiver.AdminMsg
     | GotGameMsg Game.Msg
-    | JoinedDifferentRoom Room
+    | JoinedARoom Room
     | UserTypedRoomToEnter String
     | UserTypedTheirName String
     | UserClickedJoinGame
     | NOOP
 
 
+type alias Name =
+    String
+
+
 type Player
-    = Player String PlayerHash
-    | Me String PlayerHash
+    = Player Name PlayerHash
+    | Me Name PlayerHash
 
 
 isThisPlayer : Player -> Player -> Bool
@@ -97,7 +101,7 @@ getPlayerName player =
             name
 
         Me name _ ->
-            name
+            name ++ " (You)"
 
 
 playersDecoder =
@@ -135,8 +139,8 @@ update msg model =
 
         PresenceState playerList ->
             case model of
-                InLobby room existingPlayersIfAny ->
-                    ( InLobby room playerList, Cmd.none )
+                InLobby room existingPlayersIfAny meHash ->
+                    ( InLobby room playerList meHash, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -157,8 +161,13 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        JoinedDifferentRoom room ->
-            ( InLobby room [], Cmd.none )
+        JoinedARoom room ->
+            case model of
+                ChoosingHowToStartGame _ _ name meHash ->
+                    ( InLobby room [] (Me name meHash), Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
         UserClickedStartCardGame ->
             ( model
@@ -195,10 +204,10 @@ update msg model =
 
         ServerSentData x ->
             case model of
-                ChoosingHowToStartGame (Just room) _ _ _ ->
-                    ( InLobby room [], Cmd.none )
+                ChoosingHowToStartGame (Just room) _ _ meHash ->
+                    ( InLobby room [] (Me "HARDCODEDDOUG" meHash), Cmd.none )
 
-                InLobby room _ ->
+                InLobby room _ mePlayerHash ->
                     let
                         ( gameModel, cmd ) =
                             Game.decodeCardsFromServer Game.initModel x
@@ -275,7 +284,7 @@ toolbarView model =
         ChoosingHowToStartGame _ _ _ _ ->
             text ""
 
-        InLobby (Room room) playerSet ->
+        InLobby (Room room) playerSet meHash ->
             div [ class "toolbar" ]
                 [ button [ onClick UserClickedImAnAdmin ] [ text "Code Giver View" ]
 
@@ -319,7 +328,7 @@ bodyView model =
                 , div [ class "gif" ] [ img [ src "https://s3.amazonaws.com/dougvonmoser.com/commonplace.gif" ] [] ]
                 ]
 
-        InLobby room playerList ->
+        InLobby room playerList meHash ->
             div []
                 [ h1 [] [ text "LOBBY" ]
                 , playerGridView playerList
@@ -392,23 +401,34 @@ socketHandler model rawAction =
                                 ChoosingHowToStartGame _ _ _ _ ->
                                     ServerSentData rawValue
 
-                                InLobby _ _ ->
+                                InLobby _ _ _ ->
                                     ServerSentData rawValue
 
                         Err _ ->
                             NOOP
 
                 "presence_state" ->
-                    case D.decodeValue presenceStateDecoder rawAction of
-                        Ok playerList ->
-                            PresenceState playerList
+                    case model of
+                        InLobby room _ mePlayer ->
+                            case D.decodeValue presenceStateDecoder rawAction of
+                                Ok playerList ->
+                                    let
+                                        ignore =
+                                            Debug.log "drop a log" mePlayer
+                                    in
+                                    List.map (earMarkMePlayer mePlayer) playerList
+                                        |> Debug.log "drop a log"
+                                        |> PresenceState
 
-                        Err _ ->
+                                Err _ ->
+                                    NOOP
+
+                        _ ->
                             NOOP
 
                 "presence_diff" ->
                     case model of
-                        InLobby room playerList ->
+                        InLobby room playerList _ ->
                             case D.decodeValue presenceDiffDecoder rawAction of
                                 Ok player ->
                                     PresenceState <|
@@ -428,13 +448,22 @@ socketHandler model rawAction =
             NOOP
 
 
+earMarkMePlayer : MyPlayer -> Player -> Player
+earMarkMePlayer myPlayer presencePlayer =
+    if isThisPlayer myPlayer presencePlayer then
+        myPlayer
+
+    else
+        presencePlayer
+
+
 roomDecoding raw =
     case D.decodeValue (D.map Room (D.field "room" D.string)) raw of
         Ok val ->
-            JoinedDifferentRoom val
+            JoinedARoom val
 
         Err _ ->
-            JoinedDifferentRoom <| Room "ERROR"
+            JoinedARoom <| Room "ERROR"
 
 
 subscriptions : Model -> Sub Msg
