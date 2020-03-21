@@ -18,7 +18,7 @@
         input {
 
             text-align: center;
-            font-size: 100px;
+            font-size: 48px;
             max-width: 70vw;
         }
         .join-button {
@@ -43,6 +43,10 @@
             background-color: $gray;
 
         }
+    }
+    .home-input {
+        border-radius: 8px;
+
     }
     .gif {
         margin: 56px auto;

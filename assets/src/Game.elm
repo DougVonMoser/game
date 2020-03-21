@@ -155,10 +155,12 @@ decodeCardsFromServer model x =
                 ( updatedCards, maybeHash ) =
                     transferOverStyles model.cards decoded_cards
 
-                boardCmd =
-                    Maybe.unwrap Cmd.none updateBoardCmd maybeHash
+                actaulUpdatedCards =
+                    Maybe.unwrap updatedCards
+                        (manuallyTurnCardByHash updatedCards)
+                        maybeHash
             in
-            ( { model | cards = updatedCards }, boardCmd )
+            ( { model | cards = actaulUpdatedCards }, Cmd.none )
 
         Err e ->
             ( model, Cmd.none )

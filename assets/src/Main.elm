@@ -250,22 +250,25 @@ toolbarView model =
 
         InLobby (Room room) playerSet ->
             div [ class "toolbar" ]
-                [ button [ onClick UserClickedImAnAdmin ] [ text "I'm giving clues this round!" ]
-                , button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
+                [ button [ onClick UserClickedImAnAdmin ] [ text "Code Giver View" ]
+
+                --, button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
                 , span [] [ text <| "in room " ++ room ]
                 ]
 
         InGame (Room room) _ ->
             div [ class "toolbar" ]
-                [ button [ onClick UserClickedImAnAdmin ] [ text "I'm giving clues this round!" ]
-                , button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
+                [ button [ onClick UserClickedImAnAdmin ] [ text "Code Giver View" ]
+
+                --, button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
                 , span [] [ text <| "in room " ++ room ]
                 ]
 
         InCodeGiver (Room room) _ ->
             div [ class "toolbar" ]
-                [ button [ onClick UserClickedImNotAnAdmin ] [ text "I aint giving clues this round!" ]
-                , button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
+                [ button [ onClick UserClickedImNotAnAdmin ] [ text "Audience View" ]
+
+                --, button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
                 , span [] [ text <| "in room " ++ room ]
                 ]
 
@@ -276,23 +279,22 @@ bodyView model =
         ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
             div [ class "home-container" ]
                 [ div [ class "join" ]
-                    [ h1 [] [ text "Your name" ]
-                    , input [ onInput UserTypedTheirName, maxlength 12, value roomNameTypings ] []
+                    [ h1 [] [ text "Game Code" ]
+                    , input [ class "home-input", placeholder "Enter 4-Letter Code", onInput UserTypedRoomToEnter, maxlength 4, value roomTypings ] []
                     ]
                 , div [ class "join" ]
-                    [ h1 [] [ text "Game Code" ]
-                    , input [ onInput UserTypedRoomToEnter, maxlength 4, value roomTypings ] []
-                    , joinButton roomTypings
+                    [ h1 [] [ text "Name" ]
+                    , input [ class "home-input", placeholder "Enter your name here", onInput UserTypedTheirName, maxlength 20, value roomNameTypings ] []
                     ]
                 , div [ class "create" ]
-                    [ button [ onClick UserClickedCreateNewGame ] [ text "CREATE NEW GAME" ]
+                    [ joinButton roomTypings
                     ]
                 , div [ class "gif" ] [ img [ src "https://s3.amazonaws.com/dougvonmoser.com/commonplace.gif" ] [] ]
                 ]
 
         InLobby room playerList ->
             div []
-                [ h1 [] [ text " WELCOME TO THE LOBBY " ]
+                [ h1 [] [ text "LOBBY" ]
                 , playerGridView playerList
                 , button [ onClick UserClickedStartCardGame ] [ text "START CARD GAME" ]
                 ]
@@ -317,14 +319,14 @@ joinButton roomTypings =
         isDisabled =
             String.length roomTypings /= 4
 
-        ( disabledClass, disabledText ) =
+        ( disabledClass, disabledText, onClickAction ) =
             if isDisabled then
-                ( " disabled", "Enter 4-Letter Room Code" )
+                ( "", "Create New Game", UserClickedCreateNewGame )
 
             else
-                ( "", "Play!" )
+                ( "", "Join game ->", UserClickedJoinGame )
     in
-    button [ onClick UserClickedJoinGame, class ("join-button" ++ disabledClass), disabled isDisabled ] [ text disabledText ]
+    button [ onClick onClickAction, class ("join-button" ++ disabledClass) ] [ text disabledText ]
 
 
 main : Program () Model Msg
@@ -432,4 +434,3 @@ subscriptions model =
 
 
 -- DECODERS
-

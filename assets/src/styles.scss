@@ -20,6 +20,7 @@ body {
 }
 
 .page-container {
+    height: calc(100vh - 52px);
     display: flex;
 }
 .admin-container {
@@ -86,9 +87,9 @@ body {
     display: grid;
     grid-row-gap: 8px;
     @media only screen and (min-width: 800px) {
-        grid-template-columns: repeat(4, 1fr);
-        grid-template-rows: 1fr 1fr 1fr 1fr 1fr;
-        grid-row-gap: 24px;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        grid-row-gap: 16px;
         grid-column-gap: 8px;
         height: 95vh;
         margin: 16px;

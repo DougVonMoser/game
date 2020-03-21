@@ -131,3 +131,17 @@ function generateRoomName(length) {
    }
    return result;
 }
+
+
+
+
+
+
+
+
+
+
+//page navigation away warning
+window.onbeforeunload = function() {
+    return true;
+};
