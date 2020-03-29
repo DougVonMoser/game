@@ -1,9 +1,14 @@
 'use strict';
 
 require("./styles.scss");
+import 'babel-polyfill';
 
 import {Socket} from "phoenix"
+import bindMedia from "./media.js"
 import findOrCreateUserToken from "./uuid.js"
+
+import "./customComponents.js"
+
 
 const global_user_token = findOrCreateUserToken()
 
@@ -119,6 +124,8 @@ app.ports.toSocket.subscribe(message => {
         joinGameRoom(message.room, message.name)
     } else if (message.action == "elmSaysStartCardGame") {
         channel.push("elmSaysStartCardGame", {})
+    } else if (message.action == "elmSaysConnectMedia") {
+        bindMedia();
     }
 })
 
@@ -138,11 +145,7 @@ function generateRoomName(length) {
 
 
 
-
-
-
-
 //page navigation away warning
-window.onbeforeunload = function() {
-    return true;
-};
+// window.onbeforeunload = function() {
+//     return true;
+// };

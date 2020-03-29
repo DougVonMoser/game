@@ -70,6 +70,39 @@
     }
 
 }
+
+.local-media {
+    video {
+        max-height: 200px;
+        max-width: 200px
+    }
+    min-height: 185px;
+}
+
+.players-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+}
+
+.player-row {
+    min-height: 200px;
+    min-width: 200px;
+    margin: 16px;
+    background-color: lightblue;
+    &:nth-of-type(even) {
+        background-color: lightgray;
+    }
+    display: flex;
+    flex-direction: column;
+    
+}
+
+
+.start-game {
+    margin-top: 40px;
+}
 	
 @keyframes gradient {
 	0% {

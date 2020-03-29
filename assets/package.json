@@ -46,9 +46,10 @@
         "webpack-merge": "^4.2.2"
     },
     "dependencies": {
-        "purecss": "^1.0.1",
+        "babel-polyfill": "^6.26.0",
         "phoenix": "file:../deps/phoenix",
-        "phoenix_html": "file:../deps/phoenix_html"
+        "phoenix_html": "file:../deps/phoenix_html",
+        "purecss": "^1.0.1"
     },
     "prettier": {
         "tabWidth": 4

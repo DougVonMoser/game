@@ -53,6 +53,7 @@ type Msg
     | UserClickedImNotAnAdmin
     | UserClickedImAnAdmin
     | UserClickedImInTheWrongGame
+    | UserClickedConnectMedia
     | GotCodeGiverMsg CodeGiver.AdminMsg
     | GotGameMsg Game.Msg
     | JoinedARoom Room
@@ -164,7 +165,7 @@ update msg model =
         JoinedARoom room ->
             case model of
                 ChoosingHowToStartGame _ _ name meHash ->
-                    ( InLobby room [] (Me name meHash), Cmd.none )
+                    ( InLobby room [] (Me name meHash), Socket.toSocket <| E.object [ ( "action", E.string "elmSaysConnectMedia" ) ] )
 
                 _ ->
                     ( model, Cmd.none )
@@ -175,6 +176,11 @@ update msg model =
                 E.object
                     [ ( "action", E.string "elmSaysStartCardGame" )
                     ]
+            )
+
+        UserClickedConnectMedia ->
+            ( model
+            , Socket.toSocket <| E.object [ ( "action", E.string "elmSaysConnectMedia" ) ]
             )
 
         UserClickedImInTheWrongGame ->
@@ -331,8 +337,8 @@ bodyView model =
         InLobby room playerList meHash ->
             div []
                 [ h1 [] [ text "LOBBY" ]
-                , playerGridView playerList
-                , button [ onClick UserClickedStartCardGame ] [ text "START CARD GAME" ]
+                , playersGridView playerList
+                , button [ class "start-game", onClick UserClickedStartCardGame ] [ text "START CARD GAME" ]
                 ]
 
         InCodeGiver _ codeGiverModel ->
@@ -342,12 +348,20 @@ bodyView model =
             Html.map GotGameMsg <| Game.view gameModel
 
 
-playerGridView playerList =
-    let
-        f =
-            div [] << List.singleton << text << getPlayerName
-    in
-    div [] <| List.map f playerList
+playersGridView playerList =
+    div [ class "players-grid" ] <| List.map playerGridView playerList
+
+
+playerGridView player =
+    case player of
+        Player name playerHash ->
+            div [ class "player-row" ] [ text name ]
+
+        Me name playerHash ->
+            div [ class "player-row" ]
+                [ node "local-media" [ class "local-media" ] []
+                , text <| name ++ " (You)"
+                ]
 
 
 joinButton roomTypings =
