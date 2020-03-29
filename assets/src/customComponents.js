@@ -2,14 +2,14 @@
 
 
 class LocalMedia extends HTMLElement {
-  constructor() {
-    super();
 
-    // Create a shadow root
-    //var shadow = this.attachShadow({mode: 'open'});
-    //shadow.appendChild(video);
+  connectedCallback() {
 
+    // could be used for player id specific events
+    let testInitDataFromElm = this.dataset.tester
+    debugger;
     window.addEventListener('test-event',  (e) =>  {
+
 
         let video = document.createElement('video');
         video.setAttribute("playsinline", true);
@@ -20,7 +20,7 @@ class LocalMedia extends HTMLElement {
 
         video.srcObject = e.detail;
     }, false);
-  }
+   }
 }
 
 // Define the new element

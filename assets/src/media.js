@@ -11,6 +11,7 @@ async function bindMedia(){
         let stream = await navigator.mediaDevices.getUserMedia( {video: true, audio: true});
         localStream = stream;
 
+        //could be used for player hash specific events
         var event = new CustomEvent("test-event", {
           detail: stream
         });

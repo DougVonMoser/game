@@ -359,7 +359,13 @@ playerGridView player =
 
         Me name playerHash ->
             div [ class "player-row" ]
-                [ node "local-media" [ class "local-media" ] []
+                [ node "local-media"
+                    [ class "local-media"
+
+                    -- could be used for player hash specific events
+                    , Html.Attributes.attribute "data-tester" "test-hash-lalalala"
+                    ]
+                    []
                 , text <| name ++ " (You)"
                 ]
 
