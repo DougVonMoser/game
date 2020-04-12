@@ -165,7 +165,7 @@ update msg model =
         JoinedARoom room ->
             case model of
                 ChoosingHowToStartGame _ _ name meHash ->
-                    ( InLobby room [] (Me name meHash), Socket.toSocket <| E.object [ ( "action", E.string "elmSaysConnectMedia" ) ] )
+                    ( InLobby room [] (Me name meHash), Socket.toSocket <| E.object [ ( "action", E.string "elmSaysStartCardGame" ) ] )
 
                 _ ->
                     ( model, Cmd.none )
@@ -324,10 +324,12 @@ bodyView model =
                     [ h1 [] [ text "Game Code" ]
                     , input [ class "home-input", placeholder "Enter 4-Letter Code", onInput UserTypedRoomToEnter, maxlength 4, value roomTypings ] []
                     ]
-                , div [ class "join" ]
-                    [ h1 [] [ text "Name" ]
-                    , input [ class "home-input", placeholder "Enter your name here", onInput UserTypedTheirName, maxlength 20, value roomNameTypings ] []
-                    ]
+
+                -- commented out for easter special
+                --, div [ class "join" ]
+                --    [ h1 [] [ text "Name" ]
+                --    , input [ class "home-input", placeholder "Enter your name here", onInput UserTypedTheirName, maxlength 20, value roomNameTypings ] []
+                --    ]
                 , div [ class "create" ]
                     [ joinButton roomTypings
                     ]
