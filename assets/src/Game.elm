@@ -228,22 +228,7 @@ view model =
 
 
 wiggleWidIt =
-    [ SpecificWiggle 200 (px 1) (px 1) (deg 0)
-    , SpecificWiggle 150 (px -1) (px -2) (deg -1)
-    , SpecificWiggle 100 (px -3) (px 0) (deg 1)
-    , SpecificWiggle 80 (px 3) (px 2) (deg 0)
-    , SpecificWiggle 70 (px 1) (px -1) (deg 1)
-    , SpecificWiggle 70 (px 0) (px 1) (deg -1)
-    , SpecificWiggle 70 (px -1) (px 0) (deg 1)
-    , SpecificWiggle 70 (px 2) (px 1) (deg 1)
-    , SpecificWiggle 60 (px -1) (px -2) (deg -1)
-    , SpecificWiggle 50 (px -3) (px 1) (deg 0)
-    , SpecificWiggle 50 (px 3) (px 1) (deg -1)
-    , SpecificWiggle 50 (px -1) (px -1) (deg 1)
-    , SpecificWiggle 50 (px 1) (px 2) (deg 0)
-    , SpecificWiggle 50 (px 1) (px -2) (deg -1)
-    , SpecificWiggle 50 (px 0) (px 0) (deg 0)
-    ]
+    []
         |> List.map
             (\(SpecificWiggle dur transX transY rotDeg) ->
                 Animation.toWith
