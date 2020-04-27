@@ -2,6 +2,8 @@ module Game exposing (..)
 
 import Animation exposing (deg, px)
 import Animation.Messenger exposing (State)
+import Animator
+import Animator.Inline
 import Browser
 import Browser.Dom as Dom
 import Html exposing (..)
@@ -24,18 +26,12 @@ import Task
 
 type alias Model =
     { cards : List GameCard
-    , boardStyle : Animation.Messenger.State Msg
     }
 
 
 initModel =
     { cards = []
-    , boardStyle = initBoardStyle
     }
-
-
-initBoardStyle =
-    Animation.style [ Animation.scale 1, Animation.translate (px 0) (px 0) ]
 
 
 init : () -> ( Model, Cmd Msg )
@@ -43,13 +39,6 @@ init _ =
     ( initModel
     , Cmd.none
     )
-
-
-
--- type TurnedStatus
---     = NotTurned
---     | IsTurned Team
---
 
 
 type GameCard
@@ -84,14 +73,7 @@ type Team
 type Msg
     = ReceivedCardsFromServer D.Value
     | Animate Animation.Msg
-    | ZoomedInReadyToTurn Hash
-    | TurnedReadyToZoomOut
-    | FoundElementsReadyToZoomIn (Result Dom.Error ContainerToTranslate)
     | UserClickedOnHash Hash
-
-
-type ContainerToTranslate
-    = ContainerToTranslate Float Float Hash
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -100,49 +82,14 @@ update message model =
         UserClickedOnHash hash ->
             ( model, alsoToSocket <| encodeHash hash )
 
-        FoundElementsReadyToZoomIn x ->
-            case x of
-                Err _ ->
-                    ( model, Cmd.none )
-
-                Ok containerToTranslate ->
-                    ( { model
-                        | boardStyle = updateBoardStyle containerToTranslate model.boardStyle
-                      }
-                    , Cmd.none
-                    )
-
         Animate animMsg ->
             let
                 ( updatedCards, cardCmds ) =
                     List.foldl (mapStyle animMsg) ( [], [] ) model.cards
-
-                ( updatedBoard, boardCmd ) =
-                    Animation.Messenger.update animMsg model.boardStyle
             in
-            ( { model | cards = updatedCards, boardStyle = updatedBoard }
-            , Cmd.batch <| boardCmd :: cardCmds
+            ( { model | cards = updatedCards }
+            , Cmd.none
             )
-
-        TurnedReadyToZoomOut ->
-            let
-                updatedBoardStyle =
-                    Animation.queue
-                        [ Animation.to
-                            [ Animation.scale 1
-                            , Animation.translate (px 0) (px 0)
-                            ]
-                        ]
-                        model.boardStyle
-            in
-            ( { model | boardStyle = updatedBoardStyle }, Cmd.none )
-
-        ZoomedInReadyToTurn hash ->
-            let
-                updatedCards =
-                    manuallyTurnCardByHash model.cards hash
-            in
-            ( { model | cards = updatedCards }, Cmd.none )
 
         ReceivedCardsFromServer x ->
             decodeCardsFromServer model x
@@ -164,32 +111,6 @@ decodeCardsFromServer model x =
 
         Err e ->
             ( model, Cmd.none )
-
-
-updateBoardCmd : Hash -> Cmd Msg
-updateBoardCmd hash =
-    let
-        f hash2 turnedElement middleElement =
-            ContainerToTranslate
-                (middleElement.element.x - turnedElement.element.x)
-                (middleElement.element.y - turnedElement.element.y)
-                hash2
-    in
-    Task.attempt FoundElementsReadyToZoomIn <|
-        Task.map3 f
-            (Task.succeed hash)
-            (Dom.getElement <| hashToIdSelectorString hash)
-            (Dom.getElement "middle12")
-
-
-updateBoardStyle : ContainerToTranslate -> Animation.Messenger.State Msg -> Animation.Messenger.State Msg
-updateBoardStyle (ContainerToTranslate x y hash) boardStyle =
-    Animation.queue
-        [ Animation.to [ Animation.scale 1, Animation.translate (px 0) (px 0) ]
-        , Animation.to [ Animation.translate (px x) (px y), Animation.scale 4 ]
-        , Animation.Messenger.send <| ZoomedInReadyToTurn hash
-        ]
-        boardStyle
 
 
 manuallyTurnCardByHash cards hashToTurn =
@@ -220,7 +141,7 @@ view model =
     div [ class "page-container" ]
         [ -- div [ class "score-container" ] <| scoreView model.cards,
           div [ class "outer-board" ]
-            [ div (Animation.render model.boardStyle ++ [ id "board-container", class "board-container" ])
+            [ div [ id "board-container", class "board-container" ]
                 [ div [ class "cards noselect" ] <| List.indexedMap cardView model.cards
                 ]
             ]
@@ -240,7 +161,6 @@ wiggleWidIt =
 getTurnt =
     wiggleWidIt
         ++ [ Animation.to [ Animation.rotate3d (deg 0) (deg 180) (deg 0) ]
-           , Animation.Messenger.send TurnedReadyToZoomOut
            ]
 
 
@@ -314,7 +234,7 @@ main =
 
 subscriptions model =
     Sub.batch
-        [ Animation.subscription Animate (List.map cardToItsStyle model.cards ++ [ model.boardStyle ])
+        [ Animation.subscription Animate (List.map cardToItsStyle model.cards ++ [])
         ]
 
 
