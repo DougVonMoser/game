@@ -6,6 +6,7 @@ import Animator as A
 import Animator.Inline
 import Browser
 import Browser.Dom as Dom
+import Color
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
@@ -25,7 +26,7 @@ import Task
 
 
 type alias Model =
-    { cards : List (A.Timeline GameCard)
+    { cards : A.Timeline List GameCard
     }
 
 
@@ -173,25 +174,22 @@ unTurnedCountOfTeam cards team =
 
 cardView : Int -> A.Timeline GameCard -> Html Msg
 cardView count card =
-    case card of
-        GameCard UnTurned (Word word) (OriginallyColored team) hash ->
+    case A.current card of
+        GameCard _ (Word word) (OriginallyColored team) hash ->
             div
                 [ class "card "
+                , Animator.Inline.borderColor card <|
+                    \state ->
+                        if isUnTurned state then
+                            Color.rgb255 255 96 96
+
+                        else
+                            Color.black
                 , onClick <| UserClickedOnHash hash
                 ]
                 [ div [ class "card-inner", id <| hashToIdSelectorString hash ]
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
-                    , div [ class "card-back " ] []
-                    ]
-                ]
-
-        GameCard (Turned (TurnedOverBy turnedOverByTeam)) (Word word) (OriginallyColored originallyColoredTeam) hash ->
-            div
-                [ class "card"
-                ]
-                [ div [ class "card-inner", id <| hashToIdSelectorString hash ]
-                    [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
-                    , div [ class <| "card-back audience-" ++ teamToString originallyColoredTeam ] [ span [ class "word" ] [ text word ] ]
+                    , div [ class <| "card-back audience-" ++ teamToString team ] [ span [ class "word" ] [ text word ] ]
                     ]
                 ]
 
@@ -200,6 +198,25 @@ cardView count card =
 -- ---------------------------
 -- MAIN
 -- ---------------------------
+
+
+animator : A.Animator Model
+animator =
+    A.watching
+        -- we tell the animator how
+        -- to get the checked timeline using .checked
+        (\model -> List.map)
+        -- and we tell the animator how
+        -- to update that timeline as well
+        (\newChecked model ->
+            { model | checked = newChecked }
+        )
+        A.animator
+
+
+
+-- anThing : (List (A.Timeline GameCard) -> A.Timeline GameCard) -> (Timeline GameCard -> model -> model)
+-- anHelper :
 
 
 main : Program () Model Msg

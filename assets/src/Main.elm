@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Animator
 import Browser
 import Browser.Dom as Dom
 import CodeGiver
@@ -191,7 +192,7 @@ update msg model =
         UserClickedImAnAdmin ->
             case model of
                 InGame room gameModel ->
-                    ( InCodeGiver room { cards = gameModel.cards }, Cmd.none )
+                    ( InCodeGiver room { cards = List.map Animator.current gameModel.cards }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -203,7 +204,7 @@ update msg model =
                         initModel =
                             Game.initModel
                     in
-                    ( InGame room { initModel | cards = gameModel.cards }, Cmd.none )
+                    ( InGame room { initModel | cards = List.map Animator.init gameModel.cards }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
