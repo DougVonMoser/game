@@ -68,24 +68,7 @@ update message model =
 codeGiverDecodeCardsFromServer model x =
     case Decode.decodeValue cardsDecoder x of
         Ok decoded_thing ->
-            let
-                ( updatedCards, maybeHash ) =
-                    if model.cards == [] then
-                        ( decoded_thing, Nothing )
-
-                    else
-                        transferOverStyles model.cards decoded_thing
-            in
-            case maybeHash of
-                Just hash ->
-                    let
-                        superUpdatedCards =
-                            manuallyTurnCardByHash updatedCards hash
-                    in
-                    ( { model | cards = superUpdatedCards }, Cmd.none )
-
-                Nothing ->
-                    ( { model | cards = updatedCards }, Cmd.none )
+            ( { model | cards = decoded_thing }, Cmd.none )
 
         Err e ->
             ( model, Cmd.none )
@@ -93,10 +76,10 @@ codeGiverDecodeCardsFromServer model x =
 
 turnOverCard turningOverTeam card =
     case card of
-        UnTurned style word originallyColored hash ->
-            Turned style word (TurnedOverBy turningOverTeam) originallyColored hash
+        GameCard UnTurned word originallyColored hash ->
+            GameCard (Turned (TurnedOverBy turningOverTeam)) word originallyColored hash
 
-        (Turned _ _ _ _ _) as x ->
+        x ->
             x
 
 
@@ -141,14 +124,14 @@ adminBarView model =
 cardView : GameCard -> Html AdminMsg
 cardView card =
     case card of
-        UnTurned _ (Word word) (OriginallyColored team) hash ->
+        GameCard UnTurned (Word word) (OriginallyColored team) hash ->
             div
                 [ class <| "card card-inner admin-unturned admin-" ++ teamToString team
                 , onClick <| Clicked hash
                 ]
                 [ span [ class "word" ] [ text word ] ]
 
-        Turned _ (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) _ ->
+        GameCard (Turned (TurnedOverBy turnedOverByTeam)) (Word word) (OriginallyColored originallyColoredTeam) _ ->
             div
                 [ class <| "card card-inner admin-turned admin-" ++ teamToString originallyColoredTeam ]
                 [ span [ class "word" ] [ text word ] ]

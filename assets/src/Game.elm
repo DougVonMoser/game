@@ -2,7 +2,7 @@ module Game exposing (..)
 
 import Animation exposing (deg, px)
 import Animation.Messenger exposing (State)
-import Animator
+import Animator as A
 import Animator.Inline
 import Browser
 import Browser.Dom as Dom
@@ -25,7 +25,7 @@ import Task
 
 
 type alias Model =
-    { cards : List GameCard
+    { cards : List (A.Timeline GameCard)
     }
 
 
@@ -42,8 +42,12 @@ init _ =
 
 
 type GameCard
-    = UnTurned (State Msg) Word OriginallyColored Hash
-    | Turned (State Msg) Word TurnedOverBy OriginallyColored Hash
+    = GameCard TurnedStatus Word OriginallyColored Hash
+
+
+type TurnedStatus
+    = UnTurned
+    | Turned TurnedOverBy
 
 
 type OriginallyColored
@@ -83,13 +87,7 @@ update message model =
             ( model, alsoToSocket <| encodeHash hash )
 
         Animate animMsg ->
-            let
-                ( updatedCards, cardCmds ) =
-                    List.foldl (mapStyle animMsg) ( [], [] ) model.cards
-            in
-            ( { model | cards = updatedCards }
-            , Cmd.none
-            )
+            ( model, Cmd.none )
 
         ReceivedCardsFromServer x ->
             decodeCardsFromServer model x
@@ -98,36 +96,24 @@ update message model =
 decodeCardsFromServer model x =
     case D.decodeValue cardsDecoder x of
         Ok decoded_cards ->
-            let
-                ( updatedCards, maybeHash ) =
-                    transferOverStyles model.cards decoded_cards
+            case model.cards of
+                [] ->
+                    ( { model | cards = List.map A.init decoded_cards }, Cmd.none )
 
-                actaulUpdatedCards =
-                    Maybe.unwrap updatedCards
-                        (manuallyTurnCardByHash updatedCards)
-                        maybeHash
-            in
-            ( { model | cards = actaulUpdatedCards }, Cmd.none )
+                existingCards ->
+                    let
+                        updated_cards =
+                            updateCardsToLatest decoded_cards existingCards
+                    in
+                    ( { model | cards = updated_cards }, Cmd.none )
 
         Err e ->
             ( model, Cmd.none )
 
 
-manuallyTurnCardByHash cards hashToTurn =
-    List.map
-        (\card ->
-            if cardMatchesHash card hashToTurn then
-                case card of
-                    UnTurned style word oc hash ->
-                        Turned (Animation.queue getTurnt style) word (TurnedOverBy Red) oc hash
-
-                    Turned style word turnedOverBy oc hash ->
-                        Turned (Animation.queue getTurnt style) word (TurnedOverBy Red) oc hash
-
-            else
-                card
-        )
-        cards
+updateCardsToLatest : List GameCard -> List (A.Timeline GameCard) -> List (A.Timeline GameCard)
+updateCardsToLatest x y =
+    y
 
 
 
@@ -185,27 +171,25 @@ unTurnedCountOfTeam cards team =
         |> List.length
 
 
-cardView : Int -> GameCard -> Html Msg
+cardView : Int -> A.Timeline GameCard -> Html Msg
 cardView count card =
     case card of
-        UnTurned style (Word word) (OriginallyColored team) hash ->
+        GameCard UnTurned (Word word) (OriginallyColored team) hash ->
             div
-                [ class <| "card "
+                [ class "card "
                 , onClick <| UserClickedOnHash hash
-                , id <| "middle" ++ String.fromInt count
                 ]
-                [ div (Animation.render style ++ [ class "card-inner", id <| hashToIdSelectorString hash ])
+                [ div [ class "card-inner", id <| hashToIdSelectorString hash ]
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
                     , div [ class "card-back " ] []
                     ]
                 ]
 
-        Turned style (Word word) (TurnedOverBy turnedOverByTeam) (OriginallyColored originallyColoredTeam) hash ->
+        GameCard (Turned (TurnedOverBy turnedOverByTeam)) (Word word) (OriginallyColored originallyColoredTeam) hash ->
             div
-                [ class <| "card"
-                , id <| "middle" ++ String.fromInt count
+                [ class "card"
                 ]
-                [ div (Animation.render style ++ [ class "card-inner", id <| hashToIdSelectorString hash ])
+                [ div [ class "card-inner", id <| hashToIdSelectorString hash ]
                     [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
                     , div [ class <| "card-back audience-" ++ teamToString originallyColoredTeam ] [ span [ class "word" ] [ text word ] ]
                     ]
@@ -234,8 +218,7 @@ main =
 
 subscriptions model =
     Sub.batch
-        [ Animation.subscription Animate (List.map cardToItsStyle model.cards ++ [])
-        ]
+        []
 
 
 
@@ -271,7 +254,7 @@ cardDecoder =
 
 funky : String -> Team -> String -> GameCard
 funky hash original_color word =
-    UnTurned unturnt
+    GameCard UnTurned
         (Word word)
         (OriginallyColored original_color)
         (Hash hash)
@@ -279,7 +262,7 @@ funky hash original_color word =
 
 funky4 : String -> Team -> Team -> String -> GameCard
 funky4 hash turnedOverBy original_color word =
-    Turned defaultTurnt (Word word) (TurnedOverBy turnedOverBy) (OriginallyColored original_color) (Hash hash)
+    GameCard (Turned (TurnedOverBy turnedOverBy)) (Word word) (OriginallyColored original_color) (Hash hash)
 
 
 unturnt =
@@ -332,63 +315,11 @@ hashesAreEqual (Hash hash1) (Hash hash2) =
 isUnTurned : GameCard -> Bool
 isUnTurned card =
     case card of
-        UnTurned _ _ _ _ ->
+        GameCard UnTurned _ _ _ ->
             True
 
         _ ->
             False
-
-
-mapStyle : Animation.Msg -> GameCard -> ( List GameCard, List (Cmd Msg) ) -> ( List GameCard, List (Cmd Msg) )
-mapStyle animMsg card ( cardsAcc, cmdAcc ) =
-    case card of
-        UnTurned style w oc h ->
-            let
-                ( updatedStyle, cardCmd ) =
-                    Animation.Messenger.update animMsg style
-            in
-            ( cardsAcc ++ [ UnTurned updatedStyle w oc h ], cardCmd :: cmdAcc )
-
-        Turned style w tob oc h ->
-            let
-                ( updatedStyle, cardCmd ) =
-                    Animation.Messenger.update animMsg style
-            in
-            ( cardsAcc ++ [ Turned updatedStyle w tob oc h ], cardCmd :: cmdAcc )
-
-
-transferOverStyles : List GameCard -> List GameCard -> ( List GameCard, Maybe Hash )
-transferOverStyles oldCards newCards =
-    newCards
-        |> List.map
-            (\new ->
-                case List.find (sameCard new) oldCards of
-                    Just old ->
-                        case old of
-                            UnTurned style word oc hash ->
-                                case new of
-                                    Turned _ _ _ _ _ ->
-                                        ( Turned style word (TurnedOverBy Red) oc hash, Just hash )
-
-                                    _ ->
-                                        ( old, Nothing )
-
-                            _ ->
-                                ( old, Nothing )
-
-                    Nothing ->
-                        ( new, Nothing )
-            )
-        |> List.foldl
-            (\( card, whatever ) ( cards, turnedCard ) ->
-                case turnedCard of
-                    Just x ->
-                        ( cards ++ [ card ], Just x )
-
-                    Nothing ->
-                        ( cards ++ [ card ], whatever )
-            )
-            ( [], Nothing )
 
 
 type SpecificWiggle
@@ -398,40 +329,22 @@ type SpecificWiggle
 cardBelongsToTeam : GameCard -> Team -> Bool
 cardBelongsToTeam card team =
     case card of
-        UnTurned _ _ (OriginallyColored teamCheck) _ ->
-            team == teamCheck
-
-        Turned _ _ _ (OriginallyColored teamCheck) _ ->
+        GameCard _ _ (OriginallyColored teamCheck) _ ->
             team == teamCheck
 
 
 sameCard : GameCard -> GameCard -> Bool
 sameCard c1 c2 =
     case c1 of
-        UnTurned _ _ _ hash ->
-            cardMatchesHash c2 hash
-
-        Turned _ _ _ _ hash ->
+        GameCard _ _ _ hash ->
             cardMatchesHash c2 hash
 
 
 cardMatchesHash : GameCard -> Hash -> Bool
 cardMatchesHash card hash1 =
     case card of
-        UnTurned _ _ _ hash2 ->
+        GameCard _ _ _ hash2 ->
             hashesAreEqual hash1 hash2
-
-        Turned _ _ _ _ hash2 ->
-            hashesAreEqual hash1 hash2
-
-
-cardToItsStyle card =
-    case card of
-        UnTurned style _ _ _ ->
-            style
-
-        Turned style _ _ _ _ ->
-            style
 
 
 teamToString team =
