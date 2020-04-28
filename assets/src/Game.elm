@@ -17,6 +17,7 @@ import List.Extra as List
 import Maybe.Extra as Maybe
 import Socket exposing (..)
 import Task
+import Time
 
 
 
@@ -26,7 +27,7 @@ import Task
 
 
 type alias Model =
-    { cards : A.Timeline List GameCard
+    { cards : List (A.Timeline GameCard)
     }
 
 
@@ -79,6 +80,7 @@ type Msg
     = ReceivedCardsFromServer D.Value
     | Animate Animation.Msg
     | UserClickedOnHash Hash
+    | Tick Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -92,6 +94,11 @@ update message model =
 
         ReceivedCardsFromServer x ->
             decodeCardsFromServer model x
+
+        Tick newTime ->
+            ( A.update newTime (animator model) model
+            , Cmd.none
+            )
 
 
 decodeCardsFromServer model x =
@@ -113,14 +120,33 @@ decodeCardsFromServer model x =
 
 
 updateCardsToLatest : List GameCard -> List (A.Timeline GameCard) -> List (A.Timeline GameCard)
-updateCardsToLatest x y =
-    y
+updateCardsToLatest freshFromServerCards existingCards =
+    List.map
+        (\existingCard ->
+            case A.current existingCard of
+                GameCard existingTurnedStatus (Word word) (OriginallyColored team) hash ->
+                    case findCardByHash hash freshFromServerCards of
+                        Just newCard ->
+                            case newCard of
+                                GameCard newTurnedStatus _ _ _ ->
+                                    case existingTurnedStatus /= newTurnedStatus of
+                                        True ->
+                                            A.go A.quickly newCard existingCard
+
+                                        False ->
+                                            existingCard
+
+                        Nothing ->
+                            Debug.todo "SHITTTTT"
+         --existingCard
+        )
+        existingCards
 
 
 
--- ---------------------------
--- VIEW
--- ---------------------------
+--- ---------------------------
+--- VIEW
+--- ---------------------------
 
 
 view : Model -> Html Msg
@@ -135,20 +161,18 @@ view model =
         ]
 
 
-wiggleWidIt =
-    []
-        |> List.map
-            (\(SpecificWiggle dur transX transY rotDeg) ->
-                Animation.toWith
-                    (Animation.easing { duration = dur, ease = \x -> x })
-                    [ Animation.translate transX transY, Animation.rotate rotDeg ]
-            )
+flip f y x =
+    f x y
+
+
+findCardByHash : Hash -> List GameCard -> Maybe GameCard
+findCardByHash hash oldies =
+    List.find (flip cardMatchesHash hash) oldies
 
 
 getTurnt =
-    wiggleWidIt
-        ++ [ Animation.to [ Animation.rotate3d (deg 0) (deg 180) (deg 0) ]
-           ]
+    [ Animation.to [ Animation.rotate3d (deg 0) (deg 180) (deg 0) ]
+    ]
 
 
 scoreView : List GameCard -> List (Html Msg)
@@ -200,18 +224,47 @@ cardView count card =
 -- ---------------------------
 
 
-animator : A.Animator Model
-animator =
+animator : Model -> A.Animator Model
+animator model =
+    thing model
+
+
+folder : A.Timeline GameCard -> A.Animator Model -> A.Animator Model
+folder x y =
     A.watching
-        -- we tell the animator how
-        -- to get the checked timeline using .checked
-        (\model -> List.map)
-        -- and we tell the animator how
-        -- to update that timeline as well
-        (\newChecked model ->
-            { model | checked = newChecked }
-        )
-        A.animator
+        (\model -> findTimelineGameCard model.cards x)
+        updateThatTimeline
+        y
+
+
+updateThatTimeline : A.Timeline GameCard -> Model -> Model
+updateThatTimeline updatedCard model =
+    let
+        f old =
+            if sameCard (A.current old) (A.current updatedCard) then
+                updatedCard
+
+            else
+                old
+
+        updated_cards =
+            List.map f model.cards
+    in
+    { model | cards = updated_cards }
+
+
+findTimelineGameCard : List (A.Timeline GameCard) -> A.Timeline GameCard -> A.Timeline GameCard
+findTimelineGameCard listy x =
+    case List.find ((==) x) listy of
+        Just zz ->
+            zz
+
+        Nothing ->
+            Debug.todo "SHFUCK"
+
+
+thing model =
+    List.foldl folder A.animator model.cards
 
 
 
@@ -234,8 +287,9 @@ main =
 
 
 subscriptions model =
-    Sub.batch
-        []
+    -- (4) - turning out Animator into a subscription
+    -- this is where the animator will decide to have a subscription to AnimationFrame or not.
+    A.toSubscription Tick model (animator model)
 
 
 
