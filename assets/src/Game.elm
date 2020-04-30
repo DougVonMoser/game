@@ -3,6 +3,7 @@ module Game exposing (..)
 import Animation exposing (deg, px)
 import Animation.Messenger exposing (State)
 import Animator as A
+import Animator.Css
 import Animator.Inline
 import Browser
 import Browser.Dom as Dom
@@ -131,7 +132,7 @@ updateCardsToLatest freshFromServerCards existingCards =
                                 GameCard newTurnedStatus _ _ _ ->
                                     case existingTurnedStatus /= newTurnedStatus of
                                         True ->
-                                            A.go A.quickly newCard existingCard
+                                            A.go A.veryQuickly newCard existingCard
 
                                         False ->
                                             existingCard
@@ -202,23 +203,24 @@ cardView count card =
         GameCard _ (Word word) (OriginallyColored team) hash ->
             div
                 [ class "card "
-                , Animator.Inline.borderColor card <|
+                , Animator.Inline.backgroundColor card <|
                     \state ->
                         if isUnTurned state then
-                            Color.rgb255 255 96 96
+                            Color.rgb255 230 233 237
 
                         else
-                            Color.black
+                            teamToColor team
                 , onClick <| UserClickedOnHash hash
                 ]
-                [ div [ class "card-inner", id <| hashToIdSelectorString hash ]
-                    [ div [ class "card-front" ] [ span [ class "word" ] [ text word ] ]
-                    , div [ class <| "card-back audience-" ++ teamToString team ] [ span [ class "word" ] [ text word ] ]
+                [ span
+                    [ class "word"
                     ]
+                    [ text word ]
                 ]
 
 
 
+--Animation.style [ Animation.rotate3d (deg 0) (deg 180) (deg 0) ]
 -- ---------------------------
 -- MAIN
 -- ---------------------------
@@ -428,3 +430,15 @@ teamToString team =
 
         NoTeam ->
             "gray"
+
+
+teamToColor team =
+    case team of
+        Red ->
+            Color.rgb255 209 103 99
+
+        Blue ->
+            Color.rgb255 85 151 207
+
+        NoTeam ->
+            Color.rgb255 189 187 186
