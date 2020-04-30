@@ -212,6 +212,13 @@ cardView count card =
                 ]
                 [ span
                     [ class "word"
+                    , Animator.Inline.textColor card <|
+                        \state ->
+                            if isUnTurned state then
+                                Color.black
+
+                            else
+                                Color.white
                     ]
                     [ text word ]
                 ]
