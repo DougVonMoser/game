@@ -154,10 +154,8 @@ view : Model -> Html Msg
 view model =
     div [ class "page-container" ]
         [ -- div [ class "score-container" ] <| scoreView model.cards,
-          div [ class "outer-board" ]
-            [ div [ id "board-container", class "board-container" ]
-                [ div [ class "cards noselect" ] <| List.indexedMap cardView model.cards
-                ]
+          div [ id "board-container", class "board-container" ]
+            [ div [ class "cards noselect" ] <| List.indexedMap cardView model.cards
             ]
         ]
 
