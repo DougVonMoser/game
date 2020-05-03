@@ -202,7 +202,7 @@ updateCardsToLatest freshFromServerCards existingCards =
                                 GameCard newTurnedStatus _ _ _ ->
                                     case existingTurnedStatus /= newTurnedStatus of
                                         True ->
-                                            A.go A.veryQuickly newCard existingCard
+                                            A.go A.immediately newCard existingCard
 
                                         False ->
                                             existingCard
@@ -239,7 +239,7 @@ gameFinishedPrompt model =
             div [ class <| "finished-prompt " ++ teamToString team ]
                 [ h1 [ class "team-won" ] [ text <| "yay " ++ teamToString team ++ " team won" ]
                 , img [ class "win-gif", src "https://media.giphy.com/media/aZXRIHxo9saPe/giphy.gif" ] []
-                , button [ class "restart-game", onClick UserClickedRestartGame ] [ text "RESTART GAME" ]
+                , button [ class "restart-game", onClick UserClickedRestartGame ] [ text "PLAY AGAIN" ]
                 ]
 
 
