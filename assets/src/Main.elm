@@ -204,7 +204,9 @@ update msg model =
                         initModel =
                             Game.initModel
                     in
-                    ( InGame room { initModel | cards = List.map Animator.init gameModel.cards }, Cmd.none )
+                    case Game.doTheThing initModel gameModel.cards of
+                        ( model2, cmd ) ->
+                            ( InGame room model2, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )

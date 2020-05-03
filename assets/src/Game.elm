@@ -29,11 +29,18 @@ import Time
 
 type alias Model =
     { cards : List (A.Timeline GameCard)
+    , gameStatus : GameStatus
     }
+
+
+type GameStatus
+    = Playing
+    | ATeamWon Team
 
 
 initModel =
     { cards = []
+    , gameStatus = Playing
     }
 
 
@@ -82,6 +89,7 @@ type Msg
     | Animate Animation.Msg
     | UserClickedOnHash Hash
     | Tick Time.Posix
+    | UserClickedRestartGame
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -96,6 +104,9 @@ update message model =
         ReceivedCardsFromServer x ->
             decodeCardsFromServer model x
 
+        UserClickedRestartGame ->
+            ( model, restartGameSameRoom <| E.string "" )
+
         Tick newTime ->
             ( A.update newTime (animator model) model
             , Cmd.none
@@ -105,19 +116,78 @@ update message model =
 decodeCardsFromServer model x =
     case D.decodeValue cardsDecoder x of
         Ok decoded_cards ->
-            case model.cards of
-                [] ->
-                    ( { model | cards = List.map A.init decoded_cards }, Cmd.none )
-
-                existingCards ->
-                    let
-                        updated_cards =
-                            updateCardsToLatest decoded_cards existingCards
-                    in
-                    ( { model | cards = updated_cards }, Cmd.none )
+            doTheThing model decoded_cards
 
         Err e ->
             ( model, Cmd.none )
+
+
+doTheThing model decoded_cards =
+    case ( model.cards, model.gameStatus ) of
+        ( [], _ ) ->
+            let
+                updated_cards =
+                    List.map A.init decoded_cards
+
+                updated_status =
+                    updateStatusFromCards decoded_cards
+            in
+            ( { model | cards = updated_cards, gameStatus = updated_status }, Cmd.none )
+
+        ( _, ATeamWon _ ) ->
+            ( { initModel | cards = List.map A.init decoded_cards }, Cmd.none )
+
+        ( existingCards, Playing ) ->
+            let
+                updated_cards =
+                    updateCardsToLatest decoded_cards existingCards
+
+                updated_status =
+                    updateStatusFromCards decoded_cards
+            in
+            ( { model | cards = updated_cards, gameStatus = updated_status }, Cmd.none )
+
+
+updateStatusFromCards : List GameCard -> GameStatus
+updateStatusFromCards cards =
+    if List.filter isRedCard cards |> List.all isTurned then
+        ATeamWon Red
+
+    else if List.filter isBlueCard cards |> List.all isTurned then
+        ATeamWon Blue
+
+    else
+        Playing
+
+
+isTurned : GameCard -> Bool
+isTurned (GameCard turnedStatus _ _ _) =
+    case turnedStatus of
+        Turned _ ->
+            True
+
+        UnTurned ->
+            False
+
+
+isBlueCard : GameCard -> Bool
+isBlueCard card =
+    case card of
+        GameCard _ _ (OriginallyColored Blue) _ ->
+            True
+
+        _ ->
+            False
+
+
+isRedCard : GameCard -> Bool
+isRedCard card =
+    case card of
+        GameCard _ _ (OriginallyColored Red) _ ->
+            True
+
+        _ ->
+            False
 
 
 updateCardsToLatest : List GameCard -> List (A.Timeline GameCard) -> List (A.Timeline GameCard)
@@ -153,11 +223,24 @@ updateCardsToLatest freshFromServerCards existingCards =
 view : Model -> Html Msg
 view model =
     div [ class "page-container" ]
-        [ -- div [ class "score-container" ] <| scoreView model.cards,
-          div [ id "board-container", class "board-container" ]
+        [ div [ id "board-container", class "board-container" ]
             [ div [ class "cards noselect" ] <| List.indexedMap cardView model.cards
+            , gameFinishedPrompt model
             ]
         ]
+
+
+gameFinishedPrompt model =
+    case model.gameStatus of
+        Playing ->
+            text ""
+
+        ATeamWon team ->
+            div [ class <| "finished-prompt " ++ teamToString team ]
+                [ h1 [ class "team-won" ] [ text <| "yay " ++ teamToString team ++ " team won" ]
+                , img [ class "win-gif", src "https://media.giphy.com/media/aZXRIHxo9saPe/giphy.gif" ] []
+                , button [ class "restart-game", onClick UserClickedRestartGame ] [ text "RESTART GAME" ]
+                ]
 
 
 flip f y x =

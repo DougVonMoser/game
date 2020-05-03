@@ -126,7 +126,6 @@ cardView card =
         GameCard UnTurned (Word word) (OriginallyColored team) hash ->
             div
                 [ class <| "card card-inner admin-unturned admin-" ++ teamToString team
-                , onClick <| Clicked hash
                 ]
                 [ span [ class "word" ] [ text word ] ]
 

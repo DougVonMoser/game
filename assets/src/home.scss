@@ -16,12 +16,11 @@
         flex-direction: column;
         font-weight: bold;
         input {
-
             text-align: center;
-            font-size: 32px;
+            font-size: 28px;
             max-width: 70vw;
             @media only screen and (min-width: 700px) {
-                font-size: 48px;
+                font-size: 40px;
             }
         }
         .join-button {
