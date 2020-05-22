@@ -103,15 +103,13 @@ body {
 
 
 .cards {
-    display: flex;
-    flex-wrap: wrap;
-    align-content: center;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
+    position: relative;
+    top: 0;
+    left: 0;
 }
 
 .card {
+    position: absolute;
     border: solid;
     border-radius: 5px;
     box-sizing: border-box;

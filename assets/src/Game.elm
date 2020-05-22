@@ -7,6 +7,7 @@ import Animator.Css
 import Animator.Inline
 import Browser
 import Browser.Dom as Dom
+import Browser.Events
 import Color
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -30,6 +31,13 @@ import Time
 type alias Model =
     { cards : List (A.Timeline GameCard)
     , gameStatus : GameStatus
+    , window : Window
+    }
+
+
+type alias Window =
+    { width : Int
+    , height : Int
     }
 
 
@@ -41,13 +49,27 @@ type GameStatus
 initModel =
     { cards = []
     , gameStatus = Playing
+    , window = { width = 800, height = 500 }
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( initModel
-    , Cmd.none
+    , Dom.getViewport
+        |> Task.attempt
+            (\viewportResult ->
+                case viewportResult of
+                    Ok viewport ->
+                        WindowSize
+                            (round viewport.scene.width)
+                            (round viewport.scene.height)
+
+                    Err err ->
+                        WindowSize
+                            (round 800)
+                            (round 600)
+            )
     )
 
 
@@ -90,6 +112,7 @@ type Msg
     | UserClickedOnHash Hash
     | Tick Time.Posix
     | UserClickedRestartGame
+    | WindowSize Int Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -109,6 +132,16 @@ update message model =
 
         Tick newTime ->
             ( A.update newTime (animator model) model
+            , Cmd.none
+            )
+
+        WindowSize width height ->
+            ( { model
+                | window =
+                    { width = width
+                    , height = height
+                    }
+              }
             , Cmd.none
             )
 
@@ -209,7 +242,6 @@ updateCardsToLatest freshFromServerCards existingCards =
 
                         Nothing ->
                             Debug.todo "SHITTTTT"
-         --existingCard
         )
         existingCards
 
@@ -284,6 +316,9 @@ cardView count card =
         GameCard _ (Word word) (OriginallyColored team) hash ->
             div
                 [ class "card "
+                , Animator.Inline.xy card <|
+                    \state ->
+                        { x = A.at 2, y = A.at 3 }
                 , Animator.Inline.backgroundColor card <|
                     \state ->
                         if isUnTurned state then
@@ -377,9 +412,10 @@ main =
 
 
 subscriptions model =
-    -- (4) - turning out Animator into a subscription
-    -- this is where the animator will decide to have a subscription to AnimationFrame or not.
-    A.toSubscription Tick model (animator model)
+    Sub.batch
+        [ A.toSubscription Tick model (animator model)
+        , Browser.Events.onResize WindowSize
+        ]
 
 
 

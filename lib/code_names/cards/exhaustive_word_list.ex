@@ -126,13 +126,6 @@ Star
 Shot
 Cat
 Plastic
-Albro
-VonMoser
-Easter
-Egg
-Bunny
-Family
-Basket
 chocolate
     )
   end
