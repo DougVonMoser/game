@@ -51,8 +51,12 @@ init _ =
     )
 
 
-type GameCard
-    = GameCard TurnedStatus Word OriginallyColored Hash
+type alias GameCard =
+    { turnedStatus : TurnedStatus
+    , word : Word
+    , originallyColored : OriginallyColored
+    , hash : Hash
+    }
 
 
 type TurnedStatus
@@ -161,8 +165,8 @@ updateStatusFromCards cards =
 
 
 isTurned : GameCard -> Bool
-isTurned (GameCard turnedStatus _ _ _) =
-    case turnedStatus of
+isTurned card =
+    case card.turnedStatus of
         Turned _ ->
             True
 
@@ -172,22 +176,12 @@ isTurned (GameCard turnedStatus _ _ _) =
 
 isBlueCard : GameCard -> Bool
 isBlueCard card =
-    case card of
-        GameCard _ _ (OriginallyColored Blue) _ ->
-            True
-
-        _ ->
-            False
+    card.originallyColored == Blue
 
 
 isRedCard : GameCard -> Bool
 isRedCard card =
-    case card of
-        GameCard _ _ (OriginallyColored Red) _ ->
-            True
-
-        _ ->
-            False
+    card.originallyColored == Red
 
 
 updateCardsToLatest : List GameCard -> List (A.Timeline GameCard) -> List (A.Timeline GameCard)
@@ -279,32 +273,43 @@ unTurnedCountOfTeam cards team =
 
 
 cardView : Int -> A.Timeline GameCard -> Html Msg
-cardView count card =
-    case A.current card of
-        GameCard _ (Word word) (OriginallyColored team) hash ->
-            div
-                [ class "card "
-                , Animator.Inline.backgroundColor card <|
-                    \state ->
-                        if isUnTurned state then
-                            Color.rgb255 230 233 237
+cardView count timelineCard =
+    let
+        currentCard =
+            A.current timelineCard
 
-                        else
-                            teamToColor team
-                , onClick <| UserClickedOnHash hash
-                ]
-                [ span
-                    [ class "word"
-                    , Animator.Inline.textColor card <|
-                        \state ->
-                            if isUnTurned state then
-                                Color.black
+        (Word word) =
+            currentCard.word
 
-                            else
-                                Color.white
-                    ]
-                    [ text word ]
-                ]
+        (OriginallyColored team) =
+            currentCard.originallyColored
+
+        hash =
+            currentCard.hash
+    in
+    div
+        [ class "card "
+        , Animator.Inline.backgroundColor timelineCard <|
+            \state ->
+                if isUnTurned state then
+                    Color.rgb255 230 233 237
+
+                else
+                    teamToColor team
+        , onClick <| UserClickedOnHash hash
+        ]
+        [ span
+            [ class "word"
+            , Animator.Inline.textColor timelineCard <|
+                \state ->
+                    if isUnTurned state then
+                        Color.black
+
+                    else
+                        Color.white
+            ]
+            [ text word ]
+        ]
 
 
 
@@ -475,12 +480,7 @@ hashesAreEqual (Hash hash1) (Hash hash2) =
 
 isUnTurned : GameCard -> Bool
 isUnTurned card =
-    case card of
-        GameCard UnTurned _ _ _ ->
-            True
-
-        _ ->
-            False
+    card.turnedStatus == UnTurned
 
 
 type SpecificWiggle
@@ -489,23 +489,19 @@ type SpecificWiggle
 
 cardBelongsToTeam : GameCard -> Team -> Bool
 cardBelongsToTeam card team =
-    case card of
-        GameCard _ _ (OriginallyColored teamCheck) _ ->
+    case card.originallyColored of
+        OriginallyColored teamCheck ->
             team == teamCheck
 
 
 sameCard : GameCard -> GameCard -> Bool
 sameCard c1 c2 =
-    case c1 of
-        GameCard _ _ _ hash ->
-            cardMatchesHash c2 hash
+    cardMatchesHash c2 c1.hash
 
 
 cardMatchesHash : GameCard -> Hash -> Bool
 cardMatchesHash card hash1 =
-    case card of
-        GameCard _ _ _ hash2 ->
-            hashesAreEqual hash1 hash2
+    hashesAreEqual hash1 card.hash
 
 
 teamToString team =
