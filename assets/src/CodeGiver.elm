@@ -76,8 +76,8 @@ codeGiverDecodeCardsFromServer model x =
 
 turnOverCard turningOverTeam card =
     case card of
-        GameCard UnTurned word originallyColored hash ->
-            GameCard (Turned (TurnedOverBy turningOverTeam)) word originallyColored hash
+        GameCard _ UnTurned word originallyColored hash ->
+            GameCard initPosition (Turned (TurnedOverBy turningOverTeam)) word originallyColored hash
 
         x ->
             x
@@ -123,13 +123,13 @@ adminBarView model =
 cardView : GameCard -> Html AdminMsg
 cardView card =
     case card of
-        GameCard UnTurned (Word word) (OriginallyColored team) hash ->
+        GameCard _ UnTurned (Word word) (OriginallyColored team) hash ->
             div
                 [ class <| "card card-inner admin-unturned admin-" ++ teamToString team
                 ]
                 [ span [ class "word" ] [ text word ] ]
 
-        GameCard (Turned (TurnedOverBy turnedOverByTeam)) (Word word) (OriginallyColored originallyColoredTeam) _ ->
+        GameCard _ (Turned (TurnedOverBy turnedOverByTeam)) (Word word) (OriginallyColored originallyColoredTeam) _ ->
             div
                 [ class <| "card card-inner admin-turned admin-" ++ teamToString originallyColoredTeam ]
                 [ span [ class "word" ] [ text word ] ]

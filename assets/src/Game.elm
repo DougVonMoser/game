@@ -41,6 +41,11 @@ type alias Window =
     }
 
 
+type Position
+    = Freebird
+    | Homing
+
+
 type GameStatus
     = Playing
     | ATeamWon Team
@@ -74,7 +79,7 @@ init _ =
 
 
 type GameCard
-    = GameCard TurnedStatus Word OriginallyColored Hash
+    = GameCard Position TurnedStatus Word OriginallyColored Hash
 
 
 type TurnedStatus
@@ -155,12 +160,35 @@ decodeCardsFromServer model x =
             ( model, Cmd.none )
 
 
+mapCardPosition : Position -> GameCard -> GameCard
+mapCardPosition newPosition (GameCard _ tS w oC h) =
+    GameCard newPosition tS w oC h
+
+
+animatorInitFunky : Int -> GameCard -> A.Timeline GameCard
+animatorInitFunky count gameCard =
+    let
+        waitcount =
+            toFloat <| 300 + (count * 10)
+    in
+    A.interrupt
+        [ A.wait (A.millis waitcount)
+        , A.event (A.millis 600) (mapCardPosition Homing gameCard)
+        , A.wait (A.millis 300)
+        , A.event (A.seconds 1) (mapCardPosition Freebird gameCard)
+        , A.wait (A.millis 300)
+        , A.event (A.seconds 1) (mapCardPosition Homing gameCard)
+        ]
+    <|
+        A.init gameCard
+
+
 doTheThing model decoded_cards =
     case ( model.cards, model.gameStatus ) of
         ( [], _ ) ->
             let
                 updated_cards =
-                    List.map A.init decoded_cards
+                    List.indexedMap animatorInitFunky decoded_cards
 
                 updated_status =
                     updateStatusFromCards decoded_cards
@@ -194,7 +222,7 @@ updateStatusFromCards cards =
 
 
 isTurned : GameCard -> Bool
-isTurned (GameCard turnedStatus _ _ _) =
+isTurned (GameCard _ turnedStatus _ _ _) =
     case turnedStatus of
         Turned _ ->
             True
@@ -206,7 +234,7 @@ isTurned (GameCard turnedStatus _ _ _) =
 isBlueCard : GameCard -> Bool
 isBlueCard card =
     case card of
-        GameCard _ _ (OriginallyColored Blue) _ ->
+        GameCard _ _ _ (OriginallyColored Blue) _ ->
             True
 
         _ ->
@@ -216,7 +244,7 @@ isBlueCard card =
 isRedCard : GameCard -> Bool
 isRedCard card =
     case card of
-        GameCard _ _ (OriginallyColored Red) _ ->
+        GameCard _ _ _ (OriginallyColored Red) _ ->
             True
 
         _ ->
@@ -228,14 +256,18 @@ updateCardsToLatest freshFromServerCards existingCards =
     List.map
         (\existingCard ->
             case A.current existingCard of
-                GameCard existingTurnedStatus (Word word) (OriginallyColored team) hash ->
+                GameCard existingPosition existingTurnedStatus (Word word) (OriginallyColored team) hash ->
                     case findCardByHash hash freshFromServerCards of
                         Just newCard ->
                             case newCard of
-                                GameCard newTurnedStatus _ _ _ ->
+                                GameCard _ newTurnedStatus x1 x2 x3 ->
                                     case existingTurnedStatus /= newTurnedStatus of
                                         True ->
-                                            A.go A.immediately newCard existingCard
+                                            let
+                                                newCardWithExistingPosition =
+                                                    GameCard existingPosition newTurnedStatus x1 x2 x3
+                                            in
+                                            A.go A.slowly newCardWithExistingPosition existingCard
 
                                         False ->
                                             existingCard
@@ -313,12 +345,42 @@ unTurnedCountOfTeam cards team =
 cardView : Int -> A.Timeline GameCard -> Html Msg
 cardView count card =
     case A.current card of
-        GameCard _ (Word word) (OriginallyColored team) hash ->
+        GameCard position _ (Word word) (OriginallyColored team) hash ->
             div
                 [ class "card "
-                , Animator.Inline.xy card <|
-                    \state ->
-                        { x = A.at 2, y = A.at 3 }
+                , style "top"
+                    (String.fromFloat
+                        (A.linear card
+                            (\((GameCard positionState _ _ _ _) as state) ->
+                                case ( positionState, isUnTurned state ) of
+                                    ( Freebird, True ) ->
+                                        A.at <| toFloat (100 + (count * 1))
+
+                                    ( Homing, True ) ->
+                                        A.at <| toFloat (400 + (count * 1))
+
+                                    ( _, False ) ->
+                                        A.wave 100 300
+                                            -- loop every 700ms
+                                            |> A.loop (A.millis 700)
+                            )
+                        )
+                        ++ "px"
+                    )
+                , style "left"
+                    (String.fromFloat
+                        (A.linear card
+                            (\(GameCard positionState _ _ _ _) ->
+                                case positionState of
+                                    Freebird ->
+                                        A.at <| toFloat 100
+
+                                    Homing ->
+                                        A.at <| toFloat 400
+                            )
+                        )
+                        ++ "px"
+                    )
                 , Animator.Inline.backgroundColor card <|
                     \state ->
                         if isUnTurned state then
@@ -451,7 +513,9 @@ cardDecoder =
 
 funky : String -> Team -> String -> GameCard
 funky hash original_color word =
-    GameCard UnTurned
+    GameCard
+        initPosition
+        UnTurned
         (Word word)
         (OriginallyColored original_color)
         (Hash hash)
@@ -459,7 +523,11 @@ funky hash original_color word =
 
 funky4 : String -> Team -> Team -> String -> GameCard
 funky4 hash turnedOverBy original_color word =
-    GameCard (Turned (TurnedOverBy turnedOverBy)) (Word word) (OriginallyColored original_color) (Hash hash)
+    GameCard initPosition (Turned (TurnedOverBy turnedOverBy)) (Word word) (OriginallyColored original_color) (Hash hash)
+
+
+initPosition =
+    Freebird
 
 
 unturnt =
@@ -512,7 +580,7 @@ hashesAreEqual (Hash hash1) (Hash hash2) =
 isUnTurned : GameCard -> Bool
 isUnTurned card =
     case card of
-        GameCard UnTurned _ _ _ ->
+        GameCard _ UnTurned _ _ _ ->
             True
 
         _ ->
@@ -526,21 +594,21 @@ type SpecificWiggle
 cardBelongsToTeam : GameCard -> Team -> Bool
 cardBelongsToTeam card team =
     case card of
-        GameCard _ _ (OriginallyColored teamCheck) _ ->
+        GameCard _ _ _ (OriginallyColored teamCheck) _ ->
             team == teamCheck
 
 
 sameCard : GameCard -> GameCard -> Bool
 sameCard c1 c2 =
     case c1 of
-        GameCard _ _ _ hash ->
+        GameCard _ _ _ _ hash ->
             cardMatchesHash c2 hash
 
 
 cardMatchesHash : GameCard -> Hash -> Bool
 cardMatchesHash card hash1 =
     case card of
-        GameCard _ _ _ hash2 ->
+        GameCard _ _ _ _ hash2 ->
             hashesAreEqual hash1 hash2
 
 

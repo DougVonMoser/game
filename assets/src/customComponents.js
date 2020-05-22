@@ -7,7 +7,6 @@ class LocalMedia extends HTMLElement {
 
     // could be used for player id specific events
     let testInitDataFromElm = this.dataset.tester
-    debugger;
     window.addEventListener('test-event',  (e) =>  {
 
 
