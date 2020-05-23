@@ -40,7 +40,6 @@ type Room
 
 type Msg
     = ServerSentData D.Value
-    | PresenceState (List Player)
     | UserClickedStartCardGame --| ServerSentLatestCards
     | UserClickedCreateNewGame
     | UserClickedImNotAnAdmin
@@ -130,14 +129,6 @@ update msg model =
     case msg of
         NOOP ->
             ( model, Cmd.none )
-
-        PresenceState playerList ->
-            case model of
-                InLobby room ->
-                    ( InLobby room, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
 
         UserTypedRoomToEnter s ->
             case model of
