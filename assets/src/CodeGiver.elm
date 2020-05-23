@@ -117,22 +117,16 @@ adminBarView model =
 
 cardView : GameCard -> Html AdminMsg
 cardView { turnedStatus, word, originallyColored } =
-    let
-        (OriginallyColored team) =
-            originallyColored
-
-        (Word wordString) =
-            word
-    in
     case turnedStatus of
         UnTurned ->
-            div [ class <| "card card-inner admin-unturned admin-" ++ teamToString team ]
-                [ span [ class "word" ] [ text wordString ] ]
+            div
+                [ class <| "card card-inner admin-unturned admin-" ++ teamToString originallyColored ]
+                [ span [ class "word" ] [ text word ] ]
 
         Turned _ ->
             div
-                [ class <| "card card-inner admin-turned admin-" ++ teamToString team ]
-                [ span [ class "word" ] [ text wordString ] ]
+                [ class <| "card card-inner admin-turned admin-" ++ teamToString originallyColored ]
+                [ span [ class "word" ] [ text word ] ]
 
 
 

@@ -52,7 +52,7 @@ init _ =
 type alias GameCard =
     { turnedStatus : TurnedStatus
     , word : Word
-    , originallyColored : OriginallyColored
+    , originallyColored : Team
     , hash : Hash
     }
 
@@ -62,16 +62,12 @@ type TurnedStatus
     | Turned TurnedOverBy
 
 
-type OriginallyColored
-    = OriginallyColored Team
-
-
 type TurnedOverBy
     = TurnedOverBy Team
 
 
-type Word
-    = Word String
+type alias Word =
+    String
 
 
 type Team
@@ -179,16 +175,12 @@ isTurned card =
 
 isBlueCard : GameCard -> Bool
 isBlueCard { originallyColored } =
-    case originallyColored of
-        OriginallyColored x ->
-            x == Blue
+    originallyColored == Blue
 
 
 isRedCard : GameCard -> Bool
 isRedCard { originallyColored } =
-    case originallyColored of
-        OriginallyColored x ->
-            x == Red
+    originallyColored == Red
 
 
 updateCardsToLatest : List GameCard -> List (A.Timeline GameCard) -> List (A.Timeline GameCard)
@@ -287,12 +279,6 @@ cardView count timelineCard =
         currentCard =
             A.current timelineCard
 
-        (Word word) =
-            currentCard.word
-
-        (OriginallyColored team) =
-            currentCard.originallyColored
-
         hash =
             currentCard.hash
     in
@@ -304,7 +290,7 @@ cardView count timelineCard =
                     Color.rgb255 230 233 237
 
                 else
-                    teamToColor team
+                    teamToColor currentCard.originallyColored
         , onClick <| UserClickedOnHash hash
         ]
         [ span
@@ -317,7 +303,7 @@ cardView count timelineCard =
                     else
                         Color.white
             ]
-            [ text word ]
+            [ text currentCard.word ]
         ]
 
 
@@ -430,14 +416,17 @@ cardDecoder =
 funky : String -> Team -> String -> GameCard
 funky hash original_color word =
     GameCard UnTurned
-        (Word word)
-        (OriginallyColored original_color)
+        word
+        original_color
         (Hash hash)
 
 
 funky4 : String -> Team -> Team -> String -> GameCard
 funky4 hash turnedOverBy original_color word =
-    GameCard (Turned (TurnedOverBy turnedOverBy)) (Word word) (OriginallyColored original_color) (Hash hash)
+    GameCard (Turned (TurnedOverBy turnedOverBy))
+        word
+        original_color
+        (Hash hash)
 
 
 teamDecoder =
@@ -486,9 +475,7 @@ isUnTurned card =
 
 cardBelongsToTeam : GameCard -> Team -> Bool
 cardBelongsToTeam card team =
-    case card.originallyColored of
-        OriginallyColored teamCheck ->
-            team == teamCheck
+    card.originallyColored == team
 
 
 sameCard : GameCard -> GameCard -> Bool
