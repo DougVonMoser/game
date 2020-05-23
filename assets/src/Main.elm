@@ -25,7 +25,7 @@ type alias RoomNameTypings =
 
 type Model
     = ChoosingHowToStartGame (Maybe Room) RoomTypings RoomNameTypings
-    | InLobby Room (List Player)
+    | InLobby Room
     | InGame Room Game.Model
     | InCodeGiver Room CodeGiver.Model
 
@@ -133,8 +133,8 @@ update msg model =
 
         PresenceState playerList ->
             case model of
-                InLobby room existingPlayersIfAny ->
-                    ( InLobby room playerList, Cmd.none )
+                InLobby room ->
+                    ( InLobby room, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -158,7 +158,7 @@ update msg model =
         JoinedARoom room ->
             case model of
                 ChoosingHowToStartGame _ _ name ->
-                    ( InLobby room []
+                    ( InLobby room
                     , Socket.toSocket <|
                         E.object [ ( "action", E.string "elmSaysStartCardGame" ) ]
                     )
@@ -210,9 +210,9 @@ update msg model =
         ServerSentData x ->
             case model of
                 ChoosingHowToStartGame (Just room) _ _ ->
-                    ( InLobby room [], Cmd.none )
+                    ( InLobby room, Cmd.none )
 
-                InLobby room _ ->
+                InLobby room ->
                     let
                         gameModel =
                             Game.decodeCardsFromServer Game.initModel x
@@ -289,7 +289,7 @@ toolbarView model =
         ChoosingHowToStartGame _ _ _ ->
             text ""
 
-        InLobby (Room room) playerSet ->
+        InLobby (Room room) ->
             div [ class "toolbar" ]
                 [ button [ onClick UserClickedImAnAdmin ] [ text "Code Giver View" ]
 
@@ -335,10 +335,9 @@ bodyView model =
                 , div [ class "gif" ] [ img [ src "https://s3.amazonaws.com/dougvonmoser.com/commonplace.gif" ] [] ]
                 ]
 
-        InLobby room playerList ->
+        InLobby room ->
             div []
                 [ h1 [] [ text "LOBBY" ]
-                , playersGridView playerList
                 , button [ class "start-game", onClick UserClickedStartCardGame ] [ text "START CARD GAME" ]
                 ]
 
@@ -347,10 +346,6 @@ bodyView model =
 
         InGame _ gameModel ->
             Html.map GotGameMsg <| Game.view gameModel
-
-
-playersGridView playerList =
-    div [ class "players-grid" ] <| List.map playerGridView playerList
 
 
 playerGridView player =
@@ -418,7 +413,7 @@ socketHandler model rawAction =
                                 ChoosingHowToStartGame _ _ _ ->
                                     ServerSentData rawValue
 
-                                InLobby _ _ ->
+                                InLobby _ ->
                                     ServerSentData rawValue
 
                         Err _ ->
