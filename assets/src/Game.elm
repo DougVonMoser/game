@@ -33,8 +33,13 @@ type alias Model =
 
 type GameStatus
     = WaitingOnCardsFromServer
-    | Playing
+    | Playing AudienceOrCodeGiver
     | ATeamWon Team
+
+
+type AudienceOrCodeGiver
+    = Audience
+    | CodeGiver
 
 
 initModel =
@@ -88,6 +93,8 @@ type Msg
     | UserClickedOnHash Hash
     | Tick Time.Posix
     | UserClickedRestartGame
+    | UserClickedSwitchToAudience
+    | UserClickedSwitchToCodegiver
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -95,6 +102,12 @@ update message model =
     case message of
         UserClickedOnHash hash ->
             ( model, alsoToSocket <| encodeHash hash )
+
+        UserClickedSwitchToCodegiver ->
+            ( { model | gameStatus = Playing CodeGiver }, Cmd.none )
+
+        UserClickedSwitchToAudience ->
+            ( { model | gameStatus = Playing Audience }, Cmd.none )
 
         UserClickedRestartGame ->
             ( model, restartGameSameRoom <| E.string "" )
@@ -126,24 +139,24 @@ handleNewGameCards serverCards model =
                 updated_cards =
                     List.map A.init serverCards
             in
-            { model | cards = updated_cards, gameStatus = Playing }
+            { model | cards = updated_cards, gameStatus = Playing Audience }
 
         ATeamWon _ ->
-            { model | cards = List.map A.init serverCards, gameStatus = Playing }
+            { model | cards = List.map A.init serverCards, gameStatus = Playing Audience }
 
-        Playing ->
+        Playing _ ->
             let
                 updated_cards =
                     updateCardsToLatest serverCards model.cards
 
                 updated_status =
-                    updateStatusFromCards serverCards
+                    updateStatusFromCards serverCards model.gameStatus
             in
             { model | cards = updated_cards, gameStatus = updated_status }
 
 
-updateStatusFromCards : List GameCard -> GameStatus
-updateStatusFromCards cards =
+updateStatusFromCards : List GameCard -> GameStatus -> GameStatus
+updateStatusFromCards cards currentStatus =
     if List.filter isRedCard cards |> List.all isTurned then
         ATeamWon Red
 
@@ -151,7 +164,7 @@ updateStatusFromCards cards =
         ATeamWon Blue
 
     else
-        Playing
+        currentStatus
 
 
 isTurned : GameCard -> Bool
@@ -215,10 +228,30 @@ view : Model -> Html Msg
 view model =
     div [ class "page-container" ]
         [ div [ id "board-container", class "board-container" ]
-            [ div [ class "cards noselect" ] <| List.indexedMap cardView model.cards
+            [ div [ class "cards noselect" ] <|
+                cardsView model.cards model.gameStatus
             , gameFinishedPrompt model
+            , switchToCodeGiverView model.gameStatus
             ]
         ]
+
+
+switchToCodeGiverView : GameStatus -> Html Msg
+switchToCodeGiverView gameStatus =
+    case gameStatus of
+        WaitingOnCardsFromServer ->
+            text ""
+
+        Playing Audience ->
+            button [ class "switch-to-codegiver", onClick UserClickedSwitchToCodegiver ]
+                [ text "Switch to Giving Codes" ]
+
+        Playing CodeGiver ->
+            button [ class "switch-to-codegiver", onClick UserClickedSwitchToAudience ]
+                [ text "Switch to Audience View" ]
+
+        ATeamWon _ ->
+            text ""
 
 
 gameFinishedPrompt model =
@@ -226,7 +259,7 @@ gameFinishedPrompt model =
         WaitingOnCardsFromServer ->
             text ""
 
-        Playing ->
+        Playing _ ->
             text ""
 
         ATeamWon team ->
@@ -267,8 +300,43 @@ unTurnedCountOfTeam cards team =
         |> List.length
 
 
-cardView : Int -> A.Timeline GameCard -> Html Msg
-cardView count timelineCard =
+cardsView : List (A.Timeline GameCard) -> GameStatus -> List (Html Msg)
+cardsView cards gameStatus =
+    case gameStatus of
+        Playing Audience ->
+            List.indexedMap audienceCardView cards
+
+        Playing CodeGiver ->
+            List.indexedMap codeGiverCardView cards
+
+        _ ->
+            []
+
+
+codeGiverCardView : Int -> A.Timeline GameCard -> Html Msg
+codeGiverCardView count timelineCard =
+    let
+        currentCard =
+            A.current timelineCard
+    in
+    div
+        [ class "card "
+        , Animator.Inline.backgroundColor timelineCard <|
+            \state ->
+                teamToColor currentCard.originallyColored
+        ]
+        [ span
+            [ class "word"
+            , Animator.Inline.textColor timelineCard <|
+                \state ->
+                    Color.white
+            ]
+            [ text currentCard.word ]
+        ]
+
+
+audienceCardView : Int -> A.Timeline GameCard -> Html Msg
+audienceCardView count timelineCard =
     let
         currentCard =
             A.current timelineCard

@@ -14,15 +14,8 @@ body {
 }
 
 .toolbar {
-    background-color: gray;
     height: 52px;
-    button {
-        padding: 16px;
-        border-radius: 4px;
-        margin: 0 8px;
-    }
-
-}
+ }
 
 .page-container {
     height: calc(100vh - 52px);
@@ -83,6 +76,28 @@ body {
     position: relative;
     width: 100%;
 }
+.switch-to-codegiver {
+    box-sizing: border;
+    position: fixed;
+    top: 0;
+    padding: 4px 16px;
+    border-radius: 4px;
+    margin: 16px;
+    right: 0;
+    opacity: 0.8;
+    &:hover {
+        color: red;
+    }
+}
+.in-room {
+    position: fixed;
+    top: 0;
+    left: 0;
+    margin: 8px;
+    font-size: 36px;
+    opacity: 0.5;
+
+}
 
 
 .admin-turned {
@@ -109,6 +124,7 @@ body {
     align-items: center;
     justify-content: center;
     height: 100%;
+    margin-top: 32px;
 }
 
 .card {

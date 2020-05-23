@@ -160,20 +160,16 @@ view model =
 
 toolbarView : Model -> Html Msg
 toolbarView model =
+    let
+        f x =
+            span [ class "in-room" ] [ text x ]
+    in
     case model of
         InGame (Room room) _ ->
-            div [ class "toolbar" ]
-                [ button [ onClick UserClickedImAnAdmin ] [ text "Code Giver View" ]
-                , span [] [ text <| "in room " ++ room ]
-                ]
-
-        InCodeGiver (Room room) _ ->
-            div [ class "toolbar" ]
-                [ span [] [ text <| "in room " ++ room ]
-                ]
+            f room
 
         _ ->
-            text "oops"
+            text ""
 
 
 bodyView : Model -> Html Msg
