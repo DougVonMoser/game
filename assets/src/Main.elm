@@ -36,7 +36,6 @@ type Room
 type Msg
     = ServerSentData D.Value
     | UserClickedCreateNewGame
-    | UserClickedImNotAnAdmin
     | UserClickedImAnAdmin
     | UserClickedImInTheWrongGame
     | GotCodeGiverMsg CodeGiver.AdminMsg
@@ -88,24 +87,12 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        UserClickedImNotAnAdmin ->
-            case model of
-                InCodeGiver room gameModel ->
-                    let
-                        model2 =
-                            Game.doTheThing Game.initModel gameModel.cards
-                    in
-                    ( InGame room model2, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
         ServerSentData x ->
             case model of
                 ChoosingHowToStartGame (Just room) _ ->
                     let
                         gameModel =
-                            Game.decodeCardsFromServer Game.initModel x
+                            Game.handleReceivedCardDValue x Game.initModel
                     in
                     ( InGame room gameModel, Cmd.none )
 
@@ -182,8 +169,7 @@ toolbarView model =
 
         InCodeGiver (Room room) _ ->
             div [ class "toolbar" ]
-                [ button [ onClick UserClickedImNotAnAdmin ] [ text "Audience View" ]
-                , span [] [ text <| "in room " ++ room ]
+                [ span [] [ text <| "in room " ++ room ]
                 ]
 
         _ ->
@@ -298,4 +284,3 @@ subscriptions model =
 
         _ ->
             Sub.batch sockets
-

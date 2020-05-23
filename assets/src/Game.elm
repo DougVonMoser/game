@@ -32,13 +32,14 @@ type alias Model =
 
 
 type GameStatus
-    = Playing
+    = WaitingOnCardsFromServer
+    | Playing
     | ATeamWon Team
 
 
 initModel =
     { cards = []
-    , gameStatus = Playing
+    , gameStatus = WaitingOnCardsFromServer
     }
 
 
@@ -104,44 +105,39 @@ update message model =
             )
 
         ReceivedCardsFromServer x ->
-            ( handleReceivedCardsFromServer x model, Cmd.none )
+            ( handleReceivedCardDValue x model, Cmd.none )
 
 
-handleReceivedCardsFromServer : D.Value -> Model -> Model
-handleReceivedCardsFromServer x model =
-    D.decodeValue cardsDecoder x
-        |> Result.map (doTheThing model)
-        |> Result.withDefault model
+handleReceivedCardDValue : D.Value -> Model -> Model
+handleReceivedCardDValue x model =
+    case D.decodeValue cardsDecoder x of
+        Ok serverCards ->
+            handleNewGameCards serverCards model
+
+        Err _ ->
+            Debug.todo "SHFAAAAACK"
 
 
-doTheThing : Model -> List GameCard -> Model
-doTheThing model decoded_cards =
-    case ( model.cards, model.gameStatus ) of
-        -- dont have cards yet
-        ( [], _ ) ->
+handleNewGameCards : List GameCard -> Model -> Model
+handleNewGameCards serverCards model =
+    case model.gameStatus of
+        WaitingOnCardsFromServer ->
             let
                 updated_cards =
-                    List.map A.init decoded_cards
-
-                updated_status =
-                    updateStatusFromCards decoded_cards
+                    List.map A.init serverCards
             in
-            { model | cards = updated_cards, gameStatus = updated_status }
+            { model | cards = updated_cards, gameStatus = Playing }
 
-        -- someone won, but how does a non clickie new game get gamestatus
-        -- haha wo lines below me
-        -- reset
-        ( _, ATeamWon _ ) ->
-            { model | cards = List.map A.init decoded_cards, gameStatus = Playing }
+        ATeamWon _ ->
+            { model | cards = List.map A.init serverCards, gameStatus = Playing }
 
-        -- new card played and someone might win
-        ( existingCards, Playing ) ->
+        Playing ->
             let
                 updated_cards =
-                    updateCardsToLatest decoded_cards existingCards
+                    updateCardsToLatest serverCards model.cards
 
                 updated_status =
-                    updateStatusFromCards decoded_cards
+                    updateStatusFromCards serverCards
             in
             { model | cards = updated_cards, gameStatus = updated_status }
 
@@ -156,12 +152,6 @@ updateStatusFromCards cards =
 
     else
         Playing
-
-
-decodeCardsFromServer model x =
-    D.decodeValue cardsDecoder x
-        |> Result.map (doTheThing model)
-        |> Result.withDefault model
 
 
 isTurned : GameCard -> Bool
@@ -233,6 +223,9 @@ view model =
 
 gameFinishedPrompt model =
     case model.gameStatus of
+        WaitingOnCardsFromServer ->
+            text ""
+
         Playing ->
             text ""
 
