@@ -175,34 +175,45 @@ isTurned card =
 
 
 isBlueCard : GameCard -> Bool
-isBlueCard card =
-    card.originallyColored == Blue
+isBlueCard { originallyColored } =
+    case originallyColored of
+        OriginallyColored x ->
+            x == Blue
 
 
 isRedCard : GameCard -> Bool
-isRedCard card =
-    card.originallyColored == Red
+isRedCard { originallyColored } =
+    case originallyColored of
+        OriginallyColored x ->
+            x == Red
 
 
 updateCardsToLatest : List GameCard -> List (A.Timeline GameCard) -> List (A.Timeline GameCard)
 updateCardsToLatest freshFromServerCards existingCards =
     List.map
         (\existingCard ->
-            case A.current existingCard of
-                GameCard existingTurnedStatus (Word word) (OriginallyColored team) hash ->
-                    case findCardByHash hash freshFromServerCards of
-                        Just newCard ->
-                            case newCard of
-                                GameCard newTurnedStatus _ _ _ ->
-                                    case existingTurnedStatus /= newTurnedStatus of
-                                        True ->
-                                            A.go A.immediately newCard existingCard
+            let
+                --existingCurrentCard
+                eCC =
+                    A.current existingCard
 
-                                        False ->
-                                            existingCard
+                existingTurnedStatus =
+                    eCC.turnedStatus
 
-                        Nothing ->
-                            Debug.todo "SHITTTTT"
+                existingHash =
+                    eCC.hash
+            in
+            case findCardByHash existingHash freshFromServerCards of
+                Just newCard ->
+                    case existingTurnedStatus /= newCard.turnedStatus of
+                        True ->
+                            A.go A.immediately newCard existingCard
+
+                        False ->
+                            existingCard
+
+                Nothing ->
+                    Debug.todo "SHITTTTT"
          --existingCard
         )
         existingCards

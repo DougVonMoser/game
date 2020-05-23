@@ -75,12 +75,7 @@ codeGiverDecodeCardsFromServer model x =
 
 
 turnOverCard turningOverTeam card =
-    case card of
-        GameCard UnTurned word originallyColored hash ->
-            GameCard (Turned (TurnedOverBy turningOverTeam)) word originallyColored hash
-
-        x ->
-            x
+    { card | turnedStatus = Turned (TurnedOverBy turningOverTeam) }
 
 
 handleClickUpdate clickedHash model =
@@ -121,18 +116,23 @@ adminBarView model =
 
 
 cardView : GameCard -> Html AdminMsg
-cardView card =
-    case card of
-        GameCard UnTurned (Word word) (OriginallyColored team) hash ->
-            div
-                [ class <| "card card-inner admin-unturned admin-" ++ teamToString team
-                ]
-                [ span [ class "word" ] [ text word ] ]
+cardView { turnedStatus, word, originallyColored } =
+    let
+        (OriginallyColored team) =
+            originallyColored
 
-        GameCard (Turned (TurnedOverBy turnedOverByTeam)) (Word word) (OriginallyColored originallyColoredTeam) _ ->
+        (Word wordString) =
+            word
+    in
+    case turnedStatus of
+        UnTurned ->
+            div [ class <| "card card-inner admin-unturned admin-" ++ teamToString team ]
+                [ span [ class "word" ] [ text wordString ] ]
+
+        Turned _ ->
             div
-                [ class <| "card card-inner admin-turned admin-" ++ teamToString originallyColoredTeam ]
-                [ span [ class "word" ] [ text word ] ]
+                [ class <| "card card-inner admin-turned admin-" ++ teamToString team ]
+                [ span [ class "word" ] [ text wordString ] ]
 
 
 
