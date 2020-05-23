@@ -118,14 +118,19 @@ update message model =
 
 
 decodeCardsFromServer model x =
+    let
+        commandNone m =
+            ( m, Cmd.none )
+    in
     case D.decodeValue cardsDecoder x of
         Ok decoded_cards ->
-            doTheThing model decoded_cards
+            commandNone <| doTheThing model decoded_cards
 
         Err e ->
             ( model, Cmd.none )
 
 
+doTheThing : Model -> List GameCard ->  Model
 doTheThing model decoded_cards =
     case ( model.cards, model.gameStatus ) of
         ( [], _ ) ->
@@ -136,10 +141,10 @@ doTheThing model decoded_cards =
                 updated_status =
                     updateStatusFromCards decoded_cards
             in
-            ( { model | cards = updated_cards, gameStatus = updated_status }, Cmd.none )
+             { model | cards = updated_cards, gameStatus = updated_status }
 
         ( _, ATeamWon _ ) ->
-            ( { initModel | cards = List.map A.init decoded_cards }, Cmd.none )
+            { initModel | cards = List.map A.init decoded_cards }
 
         ( existingCards, Playing ) ->
             let
@@ -149,7 +154,7 @@ doTheThing model decoded_cards =
                 updated_status =
                     updateStatusFromCards decoded_cards
             in
-            ( { model | cards = updated_cards, gameStatus = updated_status }, Cmd.none )
+             { model | cards = updated_cards, gameStatus = updated_status }
 
 
 updateStatusFromCards : List GameCard -> GameStatus

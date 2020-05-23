@@ -203,10 +203,11 @@ update msg model =
                     let
                         initModel =
                             Game.initModel
+
+                        model2 =
+                            Game.doTheThing initModel gameModel.cards
                     in
-                    case Game.doTheThing initModel gameModel.cards of
-                        ( model2, cmd ) ->
-                            ( InGame room model2, Cmd.none )
+                    ( InGame room model2, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
