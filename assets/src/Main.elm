@@ -3,7 +3,6 @@ module Main exposing (..)
 import Animator
 import Browser
 import Browser.Dom as Dom
-import CodeGiver
 import Game
 import Html exposing (..)
 import Html.Attributes exposing (..)
