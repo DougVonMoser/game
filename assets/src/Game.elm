@@ -1,7 +1,5 @@
 module Game exposing (..)
 
-import Animation exposing (deg, px)
-import Animation.Messenger exposing (State)
 import Animator as A
 import Animator.Css
 import Animator.Inline
@@ -90,7 +88,6 @@ type Team
 
 type Msg
     = ReceivedCardsFromServer D.Value
-    | Animate Animation.Msg
     | UserClickedOnHash Hash
     | Tick Time.Posix
     | UserClickedRestartGame
@@ -101,9 +98,6 @@ update message model =
     case message of
         UserClickedOnHash hash ->
             ( model, alsoToSocket <| encodeHash hash )
-
-        Animate animMsg ->
-            ( model, Cmd.none )
 
         ReceivedCardsFromServer x ->
             let
@@ -264,11 +258,6 @@ flip f y x =
 findCardByHash : Hash -> List GameCard -> Maybe GameCard
 findCardByHash hash oldies =
     List.find (flip cardMatchesHash hash) oldies
-
-
-getTurnt =
-    [ Animation.to [ Animation.rotate3d (deg 0) (deg 180) (deg 0) ]
-    ]
 
 
 scoreView : List GameCard -> List (Html Msg)
@@ -451,14 +440,6 @@ funky4 hash turnedOverBy original_color word =
     GameCard (Turned (TurnedOverBy turnedOverBy)) (Word word) (OriginallyColored original_color) (Hash hash)
 
 
-unturnt =
-    Animation.style [ Animation.translate (px 0) (px 0), Animation.rotate3d (deg 0) (deg 0) (deg 0) ]
-
-
-defaultTurnt =
-    Animation.style [ Animation.rotate3d (deg 0) (deg 180) (deg 0) ]
-
-
 teamDecoder =
     D.string
         |> D.andThen
@@ -501,10 +482,6 @@ hashesAreEqual (Hash hash1) (Hash hash2) =
 isUnTurned : GameCard -> Bool
 isUnTurned card =
     card.turnedStatus == UnTurned
-
-
-type SpecificWiggle
-    = SpecificWiggle Float Animation.Length Animation.Length Animation.Angle
 
 
 cardBelongsToTeam : GameCard -> Team -> Bool
