@@ -106,7 +106,7 @@ update message model =
             ( model, Cmd.none )
 
         ReceivedCardsFromServer x ->
-            decodeCardsFromServer model x
+            ( decodeCardsFromServer model x, Cmd.none )
 
         UserClickedRestartGame ->
             ( model, restartGameSameRoom <| E.string "" )
@@ -118,21 +118,14 @@ update message model =
 
 
 decodeCardsFromServer model x =
-    let
-        commandNone m =
-            ( m, Cmd.none )
-    in
-    case D.decodeValue cardsDecoder x of
-        Ok decoded_cards ->
-            commandNone <| doTheThing model decoded_cards
-
-        Err e ->
-            ( model, Cmd.none )
+    Result.map (doTheThing model) (D.decodeValue cardsDecoder x)
+        |> Result.withDefault model
 
 
-doTheThing : Model -> List GameCard ->  Model
+doTheThing : Model -> List GameCard -> Model
 doTheThing model decoded_cards =
     case ( model.cards, model.gameStatus ) of
+        -- dont have cards yet
         ( [], _ ) ->
             let
                 updated_cards =
@@ -141,11 +134,15 @@ doTheThing model decoded_cards =
                 updated_status =
                     updateStatusFromCards decoded_cards
             in
-             { model | cards = updated_cards, gameStatus = updated_status }
+            { model | cards = updated_cards, gameStatus = updated_status }
 
+        -- someone won, but how does a non clickie new game get gamestatus
+        -- haha wo lines below me
+        -- reset
         ( _, ATeamWon _ ) ->
-            { initModel | cards = List.map A.init decoded_cards }
+            { model | cards = List.map A.init decoded_cards, gameStatus = Playing }
 
+        -- new card played and someone might win
         ( existingCards, Playing ) ->
             let
                 updated_cards =
@@ -154,7 +151,7 @@ doTheThing model decoded_cards =
                 updated_status =
                     updateStatusFromCards decoded_cards
             in
-             { model | cards = updated_cards, gameStatus = updated_status }
+            { model | cards = updated_cards, gameStatus = updated_status }
 
 
 updateStatusFromCards : List GameCard -> GameStatus

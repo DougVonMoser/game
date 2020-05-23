@@ -219,10 +219,10 @@ update msg model =
 
                 InLobby room _ mePlayerHash ->
                     let
-                        ( gameModel, cmd ) =
+                        gameModel =
                             Game.decodeCardsFromServer Game.initModel x
                     in
-                    ( InGame room gameModel, Cmd.map GotGameMsg cmd )
+                    ( InGame room gameModel, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
