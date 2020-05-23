@@ -40,7 +40,6 @@ type Room
 
 type Msg
     = ServerSentData D.Value
-    | UserClickedStartCardGame --| ServerSentLatestCards
     | UserClickedCreateNewGame
     | UserClickedImNotAnAdmin
     | UserClickedImAnAdmin
@@ -157,14 +156,6 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        UserClickedStartCardGame ->
-            ( model
-            , Socket.toSocket <|
-                E.object
-                    [ ( "action", E.string "elmSaysStartCardGame" )
-                    ]
-            )
-
         UserClickedConnectMedia ->
             ( model
             , Socket.toSocket <| E.object [ ( "action", E.string "elmSaysConnectMedia" ) ]
@@ -275,32 +266,20 @@ view model =
 toolbarView : Model -> Html Msg
 toolbarView model =
     case model of
-        ChoosingHowToStartGame _ _ ->
-            text ""
-
-        InLobby (Room room) ->
-            div [ class "toolbar" ]
-                [ button [ onClick UserClickedImAnAdmin ] [ text "Code Giver View" ]
-
-                --, button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
-                , span [] [ text <| "in room " ++ room ]
-                ]
-
         InGame (Room room) _ ->
             div [ class "toolbar" ]
                 [ button [ onClick UserClickedImAnAdmin ] [ text "Code Giver View" ]
-
-                --, button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
                 , span [] [ text <| "in room " ++ room ]
                 ]
 
         InCodeGiver (Room room) _ ->
             div [ class "toolbar" ]
                 [ button [ onClick UserClickedImNotAnAdmin ] [ text "Audience View" ]
-
-                --, button [ onClick UserClickedImInTheWrongGame ] [ text "Back to home screen" ]
                 , span [] [ text <| "in room " ++ room ]
                 ]
+
+        _ ->
+            text "oops"
 
 
 bodyView : Model -> Html Msg
@@ -319,10 +298,7 @@ bodyView model =
                 ]
 
         InLobby room ->
-            div []
-                [ h1 [] [ text "LOBBY" ]
-                , button [ class "start-game", onClick UserClickedStartCardGame ] [ text "START CARD GAME" ]
-                ]
+            text "LOBBY"
 
         InCodeGiver _ codeGiverModel ->
             Html.map GotCodeGiverMsg <| CodeGiver.view codeGiverModel
