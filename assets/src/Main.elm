@@ -25,7 +25,6 @@ type alias RoomNameTypings =
 
 type Model
     = ChoosingHowToStartGame (Maybe Room) RoomTypings
-    | InLobby Room
     | InGame Room Game.Model
     | InCodeGiver Room CodeGiver.Model
 
@@ -294,9 +293,6 @@ bodyView model =
                 , div [ class "gif" ] [ img [ src "https://s3.amazonaws.com/dougvonmoser.com/commonplace.gif" ] [] ]
                 ]
 
-        InLobby room ->
-            text "LOBBY"
-
         InCodeGiver _ codeGiverModel ->
             Html.map GotCodeGiverMsg <| CodeGiver.view codeGiverModel
 
@@ -367,9 +363,6 @@ socketHandler model rawAction =
                                     GotGameMsg (Game.ReceivedCardsFromServer rawValue)
 
                                 ChoosingHowToStartGame _ _ ->
-                                    ServerSentData rawValue
-
-                                InLobby _ ->
                                     ServerSentData rawValue
 
                         Err _ ->
