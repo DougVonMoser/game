@@ -22,7 +22,6 @@ type alias RoomTypings =
 type Model
     = ChoosingHowToStartGame (Maybe Room) RoomTypings
     | InGame Room Game.Model
-    | InCodeGiver Room CodeGiver.Model
 
 
 init _ =
@@ -36,9 +35,7 @@ type Room
 type Msg
     = ServerSentData D.Value
     | UserClickedCreateNewGame
-    | UserClickedImAnAdmin
     | UserClickedImInTheWrongGame
-    | GotCodeGiverMsg CodeGiver.AdminMsg
     | GotGameMsg Game.Msg
     | JoinedARoom Room
     | UserTypedRoomToEnter String
@@ -79,14 +76,6 @@ update msg model =
                 _ ->
                     ( ChoosingHowToStartGame Nothing "", Socket.joinLobby <| E.string "joindatlobby" )
 
-        UserClickedImAnAdmin ->
-            case model of
-                InGame room gameModel ->
-                    ( InCodeGiver room { cards = List.map Animator.current gameModel.cards }, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
         ServerSentData x ->
             case model of
                 ChoosingHowToStartGame (Just room) _ ->
@@ -122,18 +111,6 @@ update msg model =
                             [ ( "action", E.string "elmSaysCreateNewRoom" )
                             ]
                     )
-
-                _ ->
-                    ( model, Cmd.none )
-
-        GotCodeGiverMsg msgCG ->
-            case model of
-                InCodeGiver room modelCG ->
-                    let
-                        ( newModelCG, newCmdCG ) =
-                            CodeGiver.update msgCG modelCG
-                    in
-                    ( InCodeGiver room newModelCG, Cmd.map GotCodeGiverMsg newCmdCG )
 
                 _ ->
                     ( model, Cmd.none )
@@ -187,9 +164,6 @@ bodyView model =
                 , div [ class "gif" ] [ img [ src "https://s3.amazonaws.com/dougvonmoser.com/commonplace.gif" ] [] ]
                 ]
 
-        InCodeGiver _ codeGiverModel ->
-            Html.map GotCodeGiverMsg <| CodeGiver.view codeGiverModel
-
         InGame _ gameModel ->
             Html.map GotGameMsg <| Game.view gameModel
 
@@ -232,9 +206,6 @@ socketHandler model rawAction =
                     case D.decodeValue (D.field "value" D.value) rawAction of
                         Ok rawValue ->
                             case model of
-                                InCodeGiver _ _ ->
-                                    GotCodeGiverMsg (CodeGiver.Hey rawValue)
-
                                 InGame _ _ ->
                                     GotGameMsg (Game.ReceivedCardsFromServer rawValue)
 
@@ -278,5 +249,3 @@ subscriptions model =
                     ++ [ Sub.map GotGameMsg (Game.subscriptions gameModel)
                        ]
 
-        _ ->
-            Sub.batch sockets

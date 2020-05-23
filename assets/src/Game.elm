@@ -323,13 +323,21 @@ codeGiverCardView count timelineCard =
         [ class "card "
         , Animator.Inline.backgroundColor timelineCard <|
             \state ->
-                teamToColor currentCard.originallyColored
+                if isUnTurned state then
+                    teamToColor currentCard.originallyColored
+
+                else
+                    Color.orange
         ]
         [ span
             [ class "word"
             , Animator.Inline.textColor timelineCard <|
                 \state ->
-                    Color.white
+                    if isUnTurned state then
+                        Color.black
+
+                    else
+                        Color.white
             ]
             [ text currentCard.word ]
         ]
