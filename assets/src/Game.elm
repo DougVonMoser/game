@@ -192,7 +192,6 @@ updateCardsToLatest freshFromServerCards existingCards =
     List.map
         (\existingCard ->
             let
-                --existingCurrentCard
                 eCC =
                     A.current existingCard
 
