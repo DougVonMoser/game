@@ -92,11 +92,8 @@ update msg model =
             case model of
                 InCodeGiver room gameModel ->
                     let
-                        initModel =
-                            Game.initModel
-
                         model2 =
-                            Game.doTheThing initModel gameModel.cards
+                            Game.doTheThing Game.initModel gameModel.cards
                     in
                     ( InGame room model2, Cmd.none )
 
