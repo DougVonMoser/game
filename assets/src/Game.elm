@@ -62,8 +62,8 @@ type TurnedStatus
     | Turned TurnedOverBy
 
 
-type TurnedOverBy
-    = TurnedOverBy Team
+type alias TurnedOverBy =
+    Team
 
 
 type alias Word =
@@ -95,15 +95,6 @@ update message model =
         UserClickedOnHash hash ->
             ( model, alsoToSocket <| encodeHash hash )
 
-        ReceivedCardsFromServer x ->
-            let
-                updatedModel =
-                    D.decodeValue cardsDecoder x
-                        |> Result.map (doTheThing model)
-                        |> Result.withDefault model
-            in
-            ( updatedModel, Cmd.none )
-
         UserClickedRestartGame ->
             ( model, restartGameSameRoom <| E.string "" )
 
@@ -112,8 +103,12 @@ update message model =
             , Cmd.none
             )
 
+        ReceivedCardsFromServer x ->
+            ( handleReceivedCardsFromServer x model, Cmd.none )
 
-decodeCardsFromServer model x =
+
+handleReceivedCardsFromServer : D.Value -> Model -> Model
+handleReceivedCardsFromServer x model =
     D.decodeValue cardsDecoder x
         |> Result.map (doTheThing model)
         |> Result.withDefault model
@@ -161,6 +156,12 @@ updateStatusFromCards cards =
 
     else
         Playing
+
+
+decodeCardsFromServer model x =
+    D.decodeValue cardsDecoder x
+        |> Result.map (doTheThing model)
+        |> Result.withDefault model
 
 
 isTurned : GameCard -> Bool
@@ -423,7 +424,7 @@ funky hash original_color word =
 
 funky4 : String -> Team -> Team -> String -> GameCard
 funky4 hash turnedOverBy original_color word =
-    GameCard (Turned (TurnedOverBy turnedOverBy))
+    GameCard (Turned turnedOverBy)
         word
         original_color
         (Hash hash)

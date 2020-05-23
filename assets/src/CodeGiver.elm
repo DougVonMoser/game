@@ -75,7 +75,7 @@ codeGiverDecodeCardsFromServer model x =
 
 
 turnOverCard turningOverTeam card =
-    { card | turnedStatus = Turned (TurnedOverBy turningOverTeam) }
+    { card | turnedStatus = Turned turningOverTeam }
 
 
 handleClickUpdate clickedHash model =
