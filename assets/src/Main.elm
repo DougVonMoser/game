@@ -23,23 +23,15 @@ type alias RoomNameTypings =
     String
 
 
-type alias MyHash =
-    PlayerHash
-
-
-type alias MyPlayer =
-    Player
-
-
 type Model
-    = ChoosingHowToStartGame (Maybe Room) RoomTypings RoomNameTypings MyHash
-    | InLobby Room (List Player) MyPlayer
+    = ChoosingHowToStartGame (Maybe Room) RoomTypings RoomNameTypings
+    | InLobby Room (List Player)
     | InGame Room Game.Model
     | InCodeGiver Room CodeGiver.Model
 
 
-init meHash =
-    ( ChoosingHowToStartGame Nothing "" "" (PlayerHash meHash), Cmd.none )
+init _ =
+    ( ChoosingHowToStartGame Nothing "" "", Cmd.none )
 
 
 type Room
@@ -141,32 +133,35 @@ update msg model =
 
         PresenceState playerList ->
             case model of
-                InLobby room existingPlayersIfAny meHash ->
-                    ( InLobby room playerList meHash, Cmd.none )
+                InLobby room existingPlayersIfAny ->
+                    ( InLobby room playerList, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
         UserTypedRoomToEnter s ->
             case model of
-                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings meHash ->
-                    ( ChoosingHowToStartGame maybeRoom (String.toUpper s) roomNameTypings meHash, Cmd.none )
+                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
+                    ( ChoosingHowToStartGame maybeRoom (String.toUpper s) roomNameTypings, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
         UserTypedTheirName s ->
             case model of
-                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings meHash ->
-                    ( ChoosingHowToStartGame maybeRoom roomTypings s meHash, Cmd.none )
+                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
+                    ( ChoosingHowToStartGame maybeRoom roomTypings s, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
         JoinedARoom room ->
             case model of
-                ChoosingHowToStartGame _ _ name meHash ->
-                    ( InLobby room [] (Me name meHash), Socket.toSocket <| E.object [ ( "action", E.string "elmSaysStartCardGame" ) ] )
+                ChoosingHowToStartGame _ _ name ->
+                    ( InLobby room []
+                    , Socket.toSocket <|
+                        E.object [ ( "action", E.string "elmSaysStartCardGame" ) ]
+                    )
 
                 _ ->
                     ( model, Cmd.none )
@@ -187,7 +182,7 @@ update msg model =
         UserClickedImInTheWrongGame ->
             case model of
                 _ ->
-                    ( ChoosingHowToStartGame Nothing "" "" (PlayerHash "SHIT"), Socket.joinLobby <| E.string "joindatlobby" )
+                    ( ChoosingHowToStartGame Nothing "" "", Socket.joinLobby <| E.string "joindatlobby" )
 
         UserClickedImAnAdmin ->
             case model of
@@ -214,10 +209,10 @@ update msg model =
 
         ServerSentData x ->
             case model of
-                ChoosingHowToStartGame (Just room) _ _ meHash ->
-                    ( InLobby room [] (Me "HARDCODEDDOUG" meHash), Cmd.none )
+                ChoosingHowToStartGame (Just room) _ _ ->
+                    ( InLobby room [], Cmd.none )
 
-                InLobby room _ mePlayerHash ->
+                InLobby room _ ->
                     let
                         gameModel =
                             Game.decodeCardsFromServer Game.initModel x
@@ -229,8 +224,8 @@ update msg model =
 
         UserClickedJoinGame ->
             case model of
-                ChoosingHowToStartGame Nothing roomTypings roomNameTypings meHash ->
-                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings meHash
+                ChoosingHowToStartGame Nothing roomTypings roomNameTypings ->
+                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings
                     , Socket.toSocket <|
                         E.object
                             [ ( "action", E.string "elmSaysJoinExistingRoom" )
@@ -244,8 +239,8 @@ update msg model =
 
         UserClickedCreateNewGame ->
             case model of
-                ChoosingHowToStartGame Nothing roomTypings roomNameTypings meHash ->
-                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings meHash
+                ChoosingHowToStartGame Nothing roomTypings roomNameTypings ->
+                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings
                     , Socket.toSocket <|
                         E.object
                             [ ( "action", E.string "elmSaysCreateNewRoom" )
@@ -291,10 +286,10 @@ view model =
 toolbarView : Model -> Html Msg
 toolbarView model =
     case model of
-        ChoosingHowToStartGame _ _ _ _ ->
+        ChoosingHowToStartGame _ _ _ ->
             text ""
 
-        InLobby (Room room) playerSet meHash ->
+        InLobby (Room room) playerSet ->
             div [ class "toolbar" ]
                 [ button [ onClick UserClickedImAnAdmin ] [ text "Code Giver View" ]
 
@@ -322,7 +317,7 @@ toolbarView model =
 bodyView : Model -> Html Msg
 bodyView model =
     case model of
-        ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings meHash ->
+        ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
             div [ class "home-container" ]
                 [ div [ class "join" ]
                     [ h1 [] [ text "Game Code" ]
@@ -340,7 +335,7 @@ bodyView model =
                 , div [ class "gif" ] [ img [ src "https://s3.amazonaws.com/dougvonmoser.com/commonplace.gif" ] [] ]
                 ]
 
-        InLobby room playerList meHash ->
+        InLobby room playerList ->
             div []
                 [ h1 [] [ text "LOBBY" ]
                 , playersGridView playerList
@@ -405,10 +400,6 @@ main =
         }
 
 
-
--- socketHandler has to decode the {type: "action", value: [{stuff: things}]}
-
-
 socketHandler : Model -> D.Value -> Msg
 socketHandler model rawAction =
     case D.decodeValue (D.field "type" D.string) rawAction of
@@ -424,47 +415,13 @@ socketHandler model rawAction =
                                 InGame _ _ ->
                                     GotGameMsg (Game.ReceivedCardsFromServer rawValue)
 
-                                ChoosingHowToStartGame _ _ _ _ ->
+                                ChoosingHowToStartGame _ _ _ ->
                                     ServerSentData rawValue
 
-                                InLobby _ _ _ ->
+                                InLobby _ _ ->
                                     ServerSentData rawValue
 
                         Err _ ->
-                            NOOP
-
-                "presence_state" ->
-                    case model of
-                        InLobby room _ mePlayer ->
-                            case D.decodeValue presenceStateDecoder rawAction of
-                                Ok playerList ->
-                                    let
-                                        ignore =
-                                            Debug.log "drop a log" mePlayer
-                                    in
-                                    List.map (earMarkMePlayer mePlayer) playerList
-                                        |> Debug.log "drop a log"
-                                        |> PresenceState
-
-                                Err _ ->
-                                    NOOP
-
-                        _ ->
-                            NOOP
-
-                "presence_diff" ->
-                    case model of
-                        InLobby room playerList _ ->
-                            case D.decodeValue presenceDiffDecoder rawAction of
-                                Ok player ->
-                                    PresenceState <|
-                                        List.filter (not << isThisPlayer player) playerList
-
-                                Err e ->
-                                    -- this gets hit when the diff is anything but one player leaving
-                                    NOOP
-
-                        _ ->
                             NOOP
 
                 _ ->
@@ -472,15 +429,6 @@ socketHandler model rawAction =
 
         Err _ ->
             NOOP
-
-
-earMarkMePlayer : MyPlayer -> Player -> Player
-earMarkMePlayer myPlayer presencePlayer =
-    if isThisPlayer myPlayer presencePlayer then
-        myPlayer
-
-    else
-        presencePlayer
 
 
 roomDecoding raw =
@@ -501,7 +449,7 @@ subscriptions model =
             ]
     in
     case model of
-        ChoosingHowToStartGame _ _ _ _ ->
+        ChoosingHowToStartGame _ _ _ ->
             Sub.batch sockets
 
         InGame _ gameModel ->
