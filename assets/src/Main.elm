@@ -24,14 +24,14 @@ type alias RoomNameTypings =
 
 
 type Model
-    = ChoosingHowToStartGame (Maybe Room) RoomTypings RoomNameTypings
+    = ChoosingHowToStartGame (Maybe Room) RoomTypings
     | InLobby Room
     | InGame Room Game.Model
     | InCodeGiver Room CodeGiver.Model
 
 
 init _ =
-    ( ChoosingHowToStartGame Nothing "" "", Cmd.none )
+    ( ChoosingHowToStartGame Nothing "", Cmd.none )
 
 
 type Room
@@ -132,23 +132,23 @@ update msg model =
 
         UserTypedRoomToEnter s ->
             case model of
-                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
-                    ( ChoosingHowToStartGame maybeRoom (String.toUpper s) roomNameTypings, Cmd.none )
+                ChoosingHowToStartGame maybeRoom roomTypings ->
+                    ( ChoosingHowToStartGame maybeRoom (String.toUpper s), Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
         UserTypedTheirName s ->
             case model of
-                ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
-                    ( ChoosingHowToStartGame maybeRoom roomTypings s, Cmd.none )
+                ChoosingHowToStartGame maybeRoom roomTypings ->
+                    ( ChoosingHowToStartGame maybeRoom roomTypings, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
         JoinedARoom room ->
             case model of
-                ChoosingHowToStartGame _ _ name ->
+                ChoosingHowToStartGame _ _ ->
                     ( InLobby room
                     , Socket.toSocket <|
                         E.object [ ( "action", E.string "elmSaysStartCardGame" ) ]
@@ -173,7 +173,7 @@ update msg model =
         UserClickedImInTheWrongGame ->
             case model of
                 _ ->
-                    ( ChoosingHowToStartGame Nothing "" "", Socket.joinLobby <| E.string "joindatlobby" )
+                    ( ChoosingHowToStartGame Nothing "", Socket.joinLobby <| E.string "joindatlobby" )
 
         UserClickedImAnAdmin ->
             case model of
@@ -200,7 +200,7 @@ update msg model =
 
         ServerSentData x ->
             case model of
-                ChoosingHowToStartGame (Just room) _ _ ->
+                ChoosingHowToStartGame (Just room) _ ->
                     ( InLobby room, Cmd.none )
 
                 InLobby room ->
@@ -215,13 +215,12 @@ update msg model =
 
         UserClickedJoinGame ->
             case model of
-                ChoosingHowToStartGame Nothing roomTypings roomNameTypings ->
-                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings
+                ChoosingHowToStartGame Nothing roomTypings ->
+                    ( ChoosingHowToStartGame Nothing roomTypings
                     , Socket.toSocket <|
                         E.object
                             [ ( "action", E.string "elmSaysJoinExistingRoom" )
                             , ( "room", E.string roomTypings )
-                            , ( "name", E.string roomNameTypings )
                             ]
                     )
 
@@ -230,12 +229,11 @@ update msg model =
 
         UserClickedCreateNewGame ->
             case model of
-                ChoosingHowToStartGame Nothing roomTypings roomNameTypings ->
-                    ( ChoosingHowToStartGame Nothing roomTypings roomNameTypings
+                ChoosingHowToStartGame Nothing roomTypings ->
+                    ( ChoosingHowToStartGame Nothing roomTypings
                     , Socket.toSocket <|
                         E.object
                             [ ( "action", E.string "elmSaysCreateNewRoom" )
-                            , ( "name", E.string roomNameTypings )
                             ]
                     )
 
@@ -277,7 +275,7 @@ view model =
 toolbarView : Model -> Html Msg
 toolbarView model =
     case model of
-        ChoosingHowToStartGame _ _ _ ->
+        ChoosingHowToStartGame _ _ ->
             text ""
 
         InLobby (Room room) ->
@@ -308,18 +306,12 @@ toolbarView model =
 bodyView : Model -> Html Msg
 bodyView model =
     case model of
-        ChoosingHowToStartGame maybeRoom roomTypings roomNameTypings ->
+        ChoosingHowToStartGame maybeRoom roomTypings ->
             div [ class "home-container" ]
                 [ div [ class "join" ]
                     [ h1 [] [ text "Game Code" ]
                     , input [ class "home-input", placeholder "Enter 4-Letter Code", onInput UserTypedRoomToEnter, maxlength 4, value roomTypings ] []
                     ]
-
-                -- commented out for easter special
-                --, div [ class "join" ]
-                --    [ h1 [] [ text "Name" ]
-                --    , input [ class "home-input", placeholder "Enter your name here", onInput UserTypedTheirName, maxlength 20, value roomNameTypings ] []
-                --    ]
                 , div [ class "create" ]
                     [ joinButton roomTypings
                     ]
@@ -401,7 +393,7 @@ socketHandler model rawAction =
                                 InGame _ _ ->
                                     GotGameMsg (Game.ReceivedCardsFromServer rawValue)
 
-                                ChoosingHowToStartGame _ _ _ ->
+                                ChoosingHowToStartGame _ _ ->
                                     ServerSentData rawValue
 
                                 InLobby _ ->
@@ -435,7 +427,7 @@ subscriptions model =
             ]
     in
     case model of
-        ChoosingHowToStartGame _ _ _ ->
+        ChoosingHowToStartGame _ _ ->
             Sub.batch sockets
 
         InGame _ gameModel ->
