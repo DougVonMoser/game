@@ -19,10 +19,6 @@ type alias RoomTypings =
     String
 
 
-type alias RoomNameTypings =
-    String
-
-
 type Model
     = ChoosingHowToStartGame (Maybe Room) RoomTypings
     | InGame Room Game.Model
@@ -43,84 +39,16 @@ type Msg
     | UserClickedImNotAnAdmin
     | UserClickedImAnAdmin
     | UserClickedImInTheWrongGame
-    | UserClickedConnectMedia
     | GotCodeGiverMsg CodeGiver.AdminMsg
     | GotGameMsg Game.Msg
     | JoinedARoom Room
     | UserTypedRoomToEnter String
-    | UserTypedTheirName String
     | UserClickedJoinGame
     | NOOP
 
 
-type alias Name =
-    String
-
-
-type Player
-    = Player Name PlayerHash
-    | Me Name PlayerHash
-
-
-isThisPlayer : Player -> Player -> Bool
-isThisPlayer player1 player2 =
-    getPlayerHash player1 == getPlayerHash player2
-
-
-getPlayerHash player =
-    case player of
-        Player _ (PlayerHash hash) ->
-            hash
-
-        Me _ (PlayerHash hash) ->
-            hash
-
-
 flip f y x =
     f x y
-
-
-playerDecoder : ( String, String ) -> Player
-playerDecoder ( id, name ) =
-    Player name (PlayerHash id)
-
-
-getPlayerName : Player -> String
-getPlayerName player =
-    case player of
-        Player name _ ->
-            name
-
-        Me name _ ->
-            name ++ " (You)"
-
-
-playersDecoder =
-    D.keyValuePairs (D.field "name" D.string)
-        |> D.map (List.map playerDecoder)
-
-
-presenceStateDecoder =
-    D.field "value" playersDecoder
-
-
-presenceDiffDecoder =
-    D.field "value"
-        (D.field "leaves" playersDecoder
-            |> D.andThen
-                (\x ->
-                    case x of
-                        onlyOnePlayer :: [] ->
-                            D.succeed onlyOnePlayer
-
-                        _ ->
-                            D.fail "COULLLDJFLSK"
-                )
-        )
-
-
-type PlayerHash
-    = PlayerHash String
 
 
 update msg model =
@@ -136,14 +64,6 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        UserTypedTheirName s ->
-            case model of
-                ChoosingHowToStartGame maybeRoom roomTypings ->
-                    ( ChoosingHowToStartGame maybeRoom roomTypings, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
         JoinedARoom room ->
             case model of
                 ChoosingHowToStartGame _ _ ->
@@ -154,11 +74,6 @@ update msg model =
 
                 _ ->
                     ( model, Cmd.none )
-
-        UserClickedConnectMedia ->
-            ( model
-            , Socket.toSocket <| E.object [ ( "action", E.string "elmSaysConnectMedia" ) ]
-            )
 
         UserClickedImInTheWrongGame ->
             case model of
@@ -300,24 +215,6 @@ bodyView model =
             Html.map GotGameMsg <| Game.view gameModel
 
 
-playerGridView player =
-    case player of
-        Player name playerHash ->
-            div [ class "player-row" ] [ text name ]
-
-        Me name playerHash ->
-            div [ class "player-row" ]
-                [ node "local-media"
-                    [ class "local-media"
-
-                    -- could be used for player hash specific events
-                    , Html.Attributes.attribute "data-tester" "test-hash-lalalala"
-                    ]
-                    []
-                , text <| name ++ " (You)"
-                ]
-
-
 joinButton roomTypings =
     let
         isDisabled =
@@ -405,6 +302,3 @@ subscriptions model =
         _ ->
             Sub.batch sockets
 
-
-
--- DECODERS
