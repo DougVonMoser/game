@@ -106,7 +106,13 @@ update message model =
             ( model, Cmd.none )
 
         ReceivedCardsFromServer x ->
-            ( decodeCardsFromServer model x, Cmd.none )
+            let
+                updatedModel =
+                    D.decodeValue cardsDecoder x
+                        |> Result.map (doTheThing model)
+                        |> Result.withDefault model
+            in
+            ( updatedModel, Cmd.none )
 
         UserClickedRestartGame ->
             ( model, restartGameSameRoom <| E.string "" )
@@ -118,7 +124,8 @@ update message model =
 
 
 decodeCardsFromServer model x =
-    Result.map (doTheThing model) (D.decodeValue cardsDecoder x)
+    D.decodeValue cardsDecoder x
+        |> Result.map (doTheThing model)
         |> Result.withDefault model
 
 
