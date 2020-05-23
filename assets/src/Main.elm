@@ -148,7 +148,7 @@ update msg model =
         JoinedARoom room ->
             case model of
                 ChoosingHowToStartGame _ _ ->
-                    ( InLobby room
+                    ( InGame room Game.initModel
                     , Socket.toSocket <|
                         E.object [ ( "action", E.string "elmSaysStartCardGame" ) ]
                     )
@@ -192,9 +192,6 @@ update msg model =
         ServerSentData x ->
             case model of
                 ChoosingHowToStartGame (Just room) _ ->
-                    ( InLobby room, Cmd.none )
-
-                InLobby room ->
                     let
                         gameModel =
                             Game.decodeCardsFromServer Game.initModel x
