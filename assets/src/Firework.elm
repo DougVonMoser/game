@@ -89,6 +89,7 @@ view model =
         [ style "width" "100%"
         , style "height" "100%"
         , style "position" "absolute"
+        , style "pointer-events" "none"
 
         -- , style "background-color" "#0F0F0F"
         ]
