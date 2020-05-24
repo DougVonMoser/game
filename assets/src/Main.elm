@@ -32,8 +32,7 @@ type Room
 
 
 type Msg
-    = ServerSentData D.Value
-    | UserClickedCreateNewGame
+    = UserClickedCreateNewGame
     | UserClickedImInTheWrongGame
     | GotGameMsg Game.Msg
     | JoinedARoom Room
@@ -74,18 +73,6 @@ update msg model =
             case model of
                 _ ->
                     ( ChoosingHowToStartGame Nothing "", Socket.joinLobby <| E.string "joindatlobby" )
-
-        ServerSentData x ->
-            case model of
-                ChoosingHowToStartGame (Just room) _ ->
-                    let
-                        gameModel =
-                            Game.handleReceivedCardDValue x Game.initModel
-                    in
-                    ( InGame room gameModel, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
 
         UserClickedJoinGame ->
             case model of
@@ -201,7 +188,7 @@ socketHandler model rawAction =
                                     GotGameMsg (Game.ReceivedCardsFromServer rawValue)
 
                                 ChoosingHowToStartGame _ _ ->
-                                    ServerSentData rawValue
+                                    NOOP
 
                         Err _ ->
                             NOOP

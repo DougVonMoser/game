@@ -253,7 +253,7 @@ updateCardsToLatest freshFromServerCards existingCards =
 view : Model -> Html Msg
 view model =
     div [ id "board-container", class "board-container" ]
-        [ cardsView model.cards model.gameStatus
+        [ cardsView model.window model.cards model.gameStatus
         , gameFinishedPrompt model.gameStatus
         , switchToCodeGiverView model.gameStatus
         ]
@@ -265,8 +265,31 @@ type alias Window =
     }
 
 
-cardHeight fullHeight toolbarReserve propMarginConstant rows =
-    (fullHeight - toolbarReserve) - propMarginConstant (rows - 1) // rows
+calcCardWidth fullWidth columns =
+    let
+        reservedEdgesOfScreen =
+            16
+
+        -- the full gap between cards
+        -- each card would have a margin of (propMarginConstant / 2)
+        propMarginConstant =
+            8
+    in
+    ((fullWidth - reservedEdgesOfScreen) - (propMarginConstant * (columns - 1))) // columns
+
+
+calcCardHeight : Int -> Int -> Int
+calcCardHeight fullHeight rows =
+    let
+        toolbarReserve =
+            104
+
+        -- the full gap between cards
+        -- each card would have a margin of (propMarginConstant / 2)
+        propMarginConstant =
+            8
+    in
+    ((fullHeight - toolbarReserve) - (propMarginConstant * (rows - 1))) // rows
 
 
 switchToCodeGiverView : GameStatus -> Html Msg
@@ -333,12 +356,12 @@ unTurnedCountOfTeam cards team =
         |> List.length
 
 
-cardsView : List (A.Timeline GameCard) -> GameStatus -> Html Msg
-cardsView cards gameStatus =
+cardsView : Window -> List (A.Timeline GameCard) -> GameStatus -> Html Msg
+cardsView window cards gameStatus =
     div [ class "cards noselect" ] <|
         case gameStatus of
             Playing Audience ->
-                List.indexedMap audienceCardView cards
+                List.indexedMap (audienceCardView window) cards
 
             Playing CodeGiver ->
                 List.indexedMap codeGiverCardView cards
@@ -377,17 +400,65 @@ codeGiverCardView count timelineCard =
         ]
 
 
-audienceCardView : Int -> A.Timeline GameCard -> Html Msg
-audienceCardView count timelineCard =
+calcCardHeightWidth : Window -> ( Int, Int )
+calcCardHeightWidth window =
+    let
+        howManyPerRow =
+            if window.width < 351 then
+                3
+
+            else if window.width < 500 then
+                4
+
+            else
+                5
+
+        howManyColumns =
+            calcHowManyColumns howManyPerRow 20
+    in
+    ( calcCardHeight window.height howManyColumns
+    , calcCardWidth window.width howManyPerRow
+    )
+
+
+calcHowManyColumns rows hardCodedNumberOfCards =
+    let
+        divResult =
+            20 // rows
+
+        remainderResult =
+            remainderBy rows 20
+    in
+    if remainderResult > 0 then
+        divResult + 1
+
+    else
+        divResult
+
+
+audienceCardView : Window -> Int -> A.Timeline GameCard -> Html Msg
+audienceCardView window count timelineCard =
     let
         currentCard =
             A.current timelineCard
 
         hash =
             currentCard.hash
+
+        ( cardHeight, cardWidth ) =
+            calcCardHeightWidth window
+
+        buttonOrDiv =
+            if A.current timelineCard |> ((==) UnTurned << .turnedStatus) then
+                button
+
+            else
+                div
     in
-    button
+    buttonOrDiv
         [ class "card "
+        , Html.Attributes.style "height" (String.fromInt cardHeight ++ "px")
+        , Html.Attributes.style "width" (String.fromInt cardWidth ++ "px")
         , Animator.Inline.backgroundColor timelineCard <|
             \state ->
                 if isUnTurned state then
@@ -459,25 +530,6 @@ findTimelineGameCard listy x =
 
 thing model =
     List.foldl folder A.animator model.cards
-
-
-
--- anThing : (List (A.Timeline GameCard) -> A.Timeline GameCard) -> (Timeline GameCard -> model -> model)
--- anHelper :
-
-
-main : Program () Model Msg
-main =
-    Browser.document
-        { init = init
-        , update = update
-        , view =
-            \m ->
-                { title = "Codenames Scoreboard"
-                , body = [ view m ]
-                }
-        , subscriptions = subscriptions
-        }
 
 
 subscriptions model =

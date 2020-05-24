@@ -92,6 +92,7 @@ body {
 }
 
 .card {
+    box-sizing: border-box;
     border: solid;
     border-radius: 5px;
     box-shadow: 6px 8px 6px 0px #666;
