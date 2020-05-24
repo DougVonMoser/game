@@ -50,37 +50,21 @@ type alias Model =
     System Firework
 
 
-type Msg
-    = ParticleMsg (System.Msg Firework)
-    | Detonate
+fireworkUpdate fireworkSystem color window =
+    let
+        x =
+            toFloat window.width
 
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        ParticleMsg inner ->
-            ( System.update inner model, Cmd.none )
-
-        Detonate ->
-            ( System.burst
-                (Random.Extra.andThen3 fireworkAt
-                    (Random.uniform Red [ Green, Blue ])
-                    (normal 300 100)
-                    (normal 300 100)
-                )
-                model
-            , Cmd.none
-            )
-
-
-fireworkUpdate x color =
+        y =
+            toFloat window.height
+    in
     System.burst
         (Random.Extra.andThen3 fireworkAt
-            (Random.uniform color [])
-            (normal 300 100)
-            (normal 300 100)
+            (Random.constant color)
+            (Random.Float.normal (x / 2) 400)
+            (Random.Float.normal (y / 2) 200)
         )
-        x
+        fireworkSystem
 
 
 view : Model -> Html msg
@@ -145,8 +129,6 @@ fireworkView particle =
                 []
 
 
-{-| Using the tango palette, but a little lighter. Original colors at
--}
 toHsl : Color -> ( Float, Float, Float )
 toHsl color =
     case color of
@@ -174,13 +156,3 @@ hslString hue saturation luminance =
 
 fireworkInit =
     System.init (Random.initialSeed 0)
-
-
-main : Program () (System Firework) Msg
-main =
-    Browser.element
-        { init = \_ -> ( System.init (Random.initialSeed 0), Cmd.none )
-        , update = update
-        , view = view
-        , subscriptions = \model -> System.sub [] ParticleMsg model
-        }

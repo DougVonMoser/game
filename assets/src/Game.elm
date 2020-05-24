@@ -18,6 +18,7 @@ import List.Extra as List
 import Maybe.Extra as Maybe
 import Particle exposing (Particle)
 import Particle.System as System exposing (System)
+import Process
 import Socket exposing (..)
 import Task
 import Time
@@ -118,7 +119,7 @@ type Msg
     | UserClickedSwitchToCodegiver
     | WindowSize Int Int
     | ParticleMsg (System.Msg Firework.Firework)
-    | Detonate Team
+    | Detonate Int Team
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -152,33 +153,54 @@ update message model =
             )
 
         ReceivedCardsFromServer x ->
-            ( handleReceivedCardDValue x model, Cmd.none )
+            handleReceivedCardDValue x model
 
         ParticleMsg inner ->
-            ( { model | firework = System.update inner model.firework }, Cmd.none )
-
-        Detonate team ->
-            let
-                color =
-                    case team of
-                        Red ->
-                            Firework.Red
-
-                        Blue ->
-                            Firework.Blue
-
-                        NoTeam ->
-                            Firework.Green
-            in
             ( { model
-                | firework =
-                    Firework.fireworkUpdate model.firework color
+                | firework = System.update inner model.firework
               }
             , Cmd.none
             )
 
+        Detonate thisManyTimes team ->
+            let
+                ( updated_firework, fireworkCmd ) =
+                    detonateTeam team model thisManyTimes
+            in
+            ( { model | firework = updated_firework }, fireworkCmd )
 
-handleReceivedCardDValue : D.Value -> Model -> Model
+
+detonateAgain count team =
+    if count > 0 then
+        Task.perform (always (Detonate (count - 1) team)) <|
+            Process.sleep 90
+
+    else
+        Cmd.none
+
+
+detonateTeam team model thisManyTimes =
+    let
+        color =
+            case team of
+                Red ->
+                    Firework.Red
+
+                Blue ->
+                    Firework.Blue
+
+                NoTeam ->
+                    Firework.Green
+    in
+    ( Firework.fireworkUpdate
+        model.firework
+        color
+        model.window
+    , detonateAgain thisManyTimes team
+    )
+
+
+handleReceivedCardDValue : D.Value -> Model -> ( Model, Cmd Msg )
 handleReceivedCardDValue x model =
     case D.decodeValue cardsDecoder x of
         Ok serverCards ->
@@ -188,7 +210,7 @@ handleReceivedCardDValue x model =
             Debug.todo "SHFAAAAACK"
 
 
-handleNewGameCards : List GameCard -> Model -> Model
+handleNewGameCards : List GameCard -> Model -> ( Model, Cmd Msg )
 handleNewGameCards serverCards model =
     case model.gameStatus of
         WaitingOnCardsFromServer ->
@@ -196,10 +218,10 @@ handleNewGameCards serverCards model =
                 updated_cards =
                     List.map A.init serverCards
             in
-            { model | cards = updated_cards, gameStatus = Playing Audience }
+            ( { model | cards = updated_cards, gameStatus = Playing Audience }, Cmd.none )
 
         ATeamWon _ ->
-            { model | cards = List.map A.init serverCards, gameStatus = Playing Audience }
+            ( { model | cards = List.map A.init serverCards, gameStatus = Playing Audience }, Cmd.none )
 
         Playing _ ->
             let
@@ -208,8 +230,22 @@ handleNewGameCards serverCards model =
 
                 updated_status =
                     updateStatusFromCards serverCards model.gameStatus
+
+                ( updated_firework, fireworkCmd ) =
+                    case updated_status of
+                        ATeamWon team ->
+                            detonateTeam team model 100
+
+                        _ ->
+                            ( model.firework, Cmd.none )
             in
-            { model | cards = updated_cards, gameStatus = updated_status }
+            ( { model
+                | cards = updated_cards
+                , gameStatus = updated_status
+                , firework = updated_firework
+              }
+            , fireworkCmd
+            )
 
 
 updateStatusFromCards : List GameCard -> GameStatus -> GameStatus
@@ -318,7 +354,7 @@ blueScoreBoardView cards =
     div
         [ class "blue-sb sb"
         , style "right" "16px"
-        , onClick <| Detonate Blue
+        , onClick <| Detonate 10 Blue
         , style "background-color" (Color.toCssString <| teamToColor Blue)
         ]
         [ text <| String.fromInt howManyUnTurneds ]
@@ -332,7 +368,7 @@ redScoreBoardView cards =
     div
         [ class "red-sb sb"
         , style "left" "16px"
-        , onClick <| Detonate Red
+        , onClick <| Detonate 4 Red
         , style "background-color" (Color.toCssString <| teamToColor Red)
         ]
         [ text <| String.fromInt howManyUnTurneds ]
