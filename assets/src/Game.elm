@@ -16,6 +16,8 @@ import Json.Decode as D exposing (Decoder, at, string)
 import Json.Encode as E exposing (Value)
 import List.Extra as List
 import Maybe.Extra as Maybe
+import Particle exposing (Particle)
+import Particle.System as System exposing (System)
 import Socket exposing (..)
 import Task
 import Time
@@ -31,6 +33,7 @@ type alias Model =
     { cards : List (A.Timeline GameCard)
     , gameStatus : GameStatus
     , window : Window
+    , firework : System Firework.Firework
     }
 
 
@@ -49,6 +52,7 @@ initModel =
     { cards = []
     , gameStatus = WaitingOnCardsFromServer
     , window = { width = 800, height = 500 }
+    , firework = Firework.fireworkInit
     }
 
 
@@ -113,6 +117,8 @@ type Msg
     | UserClickedSwitchToAudience
     | UserClickedSwitchToCodegiver
     | WindowSize Int Int
+    | ParticleMsg (System.Msg Firework.Firework)
+    | Detonate Team
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -147,6 +153,29 @@ update message model =
 
         ReceivedCardsFromServer x ->
             ( handleReceivedCardDValue x model, Cmd.none )
+
+        ParticleMsg inner ->
+            ( { model | firework = System.update inner model.firework }, Cmd.none )
+
+        Detonate team ->
+            let
+                color =
+                    case team of
+                        Red ->
+                            Firework.Red
+
+                        Blue ->
+                            Firework.Blue
+
+                        NoTeam ->
+                            Firework.Green
+            in
+            ( { model
+                | firework =
+                    Firework.fireworkUpdate model.firework color
+              }
+            , Cmd.none
+            )
 
 
 handleReceivedCardDValue : D.Value -> Model -> Model
@@ -257,6 +286,7 @@ view model =
         [ cardsView model.window model.cards model.gameStatus
         , gameFinishedPrompt model.gameStatus
         , switchToCodeGiverView model.gameStatus
+        , Firework.view model.firework
         ]
             ++ scoreboards model
 
@@ -288,6 +318,7 @@ blueScoreBoardView cards =
     div
         [ class "blue-sb sb"
         , style "right" "16px"
+        , onClick <| Detonate Blue
         , style "background-color" (Color.toCssString <| teamToColor Blue)
         ]
         [ text <| String.fromInt howManyUnTurneds ]
@@ -301,6 +332,7 @@ redScoreBoardView cards =
     div
         [ class "red-sb sb"
         , style "left" "16px"
+        , onClick <| Detonate Red
         , style "background-color" (Color.toCssString <| teamToColor Red)
         ]
         [ text <| String.fromInt howManyUnTurneds ]
@@ -584,6 +616,7 @@ subscriptions model =
     Sub.batch
         [ A.toSubscription Tick model (animator model)
         , Browser.Events.onResize WindowSize
+        , System.sub [] ParticleMsg model.firework
         ]
 
 

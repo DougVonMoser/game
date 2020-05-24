@@ -73,21 +73,26 @@ update msg model =
             )
 
 
-view : Model -> Html Msg
+fireworkUpdate x color =
+    System.burst
+        (Random.Extra.andThen3 fireworkAt
+            (Random.uniform color [])
+            (normal 300 100)
+            (normal 300 100)
+        )
+        x
+
+
+view : Model -> Html msg
 view model =
-    Html.main_ []
-        [ Html.button
-            [ onClick Detonate
-            , style "display" "block"
-            ]
-            [ Html.text "Detonate!" ]
-        , System.view fireworkView
-            [ style "width" "600px"
-            , style "height" "600px"
-            , style "background-color" "#0F0F0F"
-            ]
-            model
+    System.view fireworkView
+        [ style "width" "100%"
+        , style "height" "100%"
+        , style "position" "absolute"
+
+        -- , style "background-color" "#0F0F0F"
         ]
+        model
 
 
 fireworkView : Particle Firework -> Svg msg
@@ -145,16 +150,14 @@ toHsl : Color -> ( Float, Float, Float )
 toHsl color =
     case color of
         Red ->
-            -- scarlet red
-            ( 0, 86, 75 )
+            ( 2, 54, 60 )
 
         Green ->
-            -- chameleon
+            --clean up
             ( 90, 75, 75 )
 
         Blue ->
-            -- sky blue
-            ( 211, 49, 83 )
+            ( 208, 56, 57 )
 
 
 hslString : Float -> Float -> Float -> String
@@ -166,6 +169,10 @@ hslString hue saturation luminance =
         ++ "%,"
         ++ String.fromFloat luminance
         ++ "%)"
+
+
+fireworkInit =
+    System.init (Random.initialSeed 0)
 
 
 main : Program () (System Firework) Msg
