@@ -282,7 +282,7 @@ calcCardHeight : Int -> Int -> Int
 calcCardHeight fullHeight rows =
     let
         toolbarReserve =
-            104
+            56 + 160
 
         -- the full gap between cards
         -- each card would have a margin of (propMarginConstant / 2)
