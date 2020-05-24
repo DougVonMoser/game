@@ -4,7 +4,8 @@ import Animator as A
 import Animator.Css
 import Animator.Inline
 import Browser
-import Browser.Dom as Dom
+import Browser.Dom
+import Browser.Events
 import Color
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -28,6 +29,7 @@ import Time
 type alias Model =
     { cards : List (A.Timeline GameCard)
     , gameStatus : GameStatus
+    , window : Window
     }
 
 
@@ -45,13 +47,27 @@ type AudienceOrCodeGiver
 initModel =
     { cards = []
     , gameStatus = WaitingOnCardsFromServer
+    , window = { width = 800, height = 500 }
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( initModel
-    , Cmd.none
+    , Browser.Dom.getViewport
+        |> Task.attempt
+            (\viewportResult ->
+                case viewportResult of
+                    Ok viewport ->
+                        WindowSize
+                            (round viewport.scene.width)
+                            (round viewport.scene.height)
+
+                    Err err ->
+                        WindowSize
+                            (round 800)
+                            (round 600)
+            )
     )
 
 
@@ -95,6 +111,7 @@ type Msg
     | UserClickedRestartGame
     | UserClickedSwitchToAudience
     | UserClickedSwitchToCodegiver
+    | WindowSize Int Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -114,6 +131,16 @@ update message model =
 
         Tick newTime ->
             ( A.update newTime (animator model) model
+            , Cmd.none
+            )
+
+        WindowSize width height ->
+            ( { model
+                | window =
+                    { width = width
+                    , height = height
+                    }
+              }
             , Cmd.none
             )
 
@@ -225,14 +252,21 @@ updateCardsToLatest freshFromServerCards existingCards =
 
 view : Model -> Html Msg
 view model =
-    div [ class "page-container" ]
-        [ div [ id "board-container", class "board-container" ]
-            [ div [ class "cards noselect" ] <|
-                cardsView model.cards model.gameStatus
-            , gameFinishedPrompt model
-            , switchToCodeGiverView model.gameStatus
-            ]
+    div [ id "board-container", class "board-container" ]
+        [ cardsView model.cards model.gameStatus
+        , gameFinishedPrompt model.gameStatus
+        , switchToCodeGiverView model.gameStatus
         ]
+
+
+type alias Window =
+    { width : Int
+    , height : Int
+    }
+
+
+cardHeight fullHeight toolbarReserve propMarginConstant rows =
+    (fullHeight - toolbarReserve) - propMarginConstant (rows - 1) // rows
 
 
 switchToCodeGiverView : GameStatus -> Html Msg
@@ -253,8 +287,8 @@ switchToCodeGiverView gameStatus =
             text ""
 
 
-gameFinishedPrompt model =
-    case model.gameStatus of
+gameFinishedPrompt gameStatus =
+    case gameStatus of
         WaitingOnCardsFromServer ->
             text ""
 
@@ -299,17 +333,18 @@ unTurnedCountOfTeam cards team =
         |> List.length
 
 
-cardsView : List (A.Timeline GameCard) -> GameStatus -> List (Html Msg)
+cardsView : List (A.Timeline GameCard) -> GameStatus -> Html Msg
 cardsView cards gameStatus =
-    case gameStatus of
-        Playing Audience ->
-            List.indexedMap audienceCardView cards
+    div [ class "cards noselect" ] <|
+        case gameStatus of
+            Playing Audience ->
+                List.indexedMap audienceCardView cards
 
-        Playing CodeGiver ->
-            List.indexedMap codeGiverCardView cards
+            Playing CodeGiver ->
+                List.indexedMap codeGiverCardView cards
 
-        _ ->
-            []
+            _ ->
+                []
 
 
 codeGiverCardView : Int -> A.Timeline GameCard -> Html Msg
@@ -351,7 +386,7 @@ audienceCardView count timelineCard =
         hash =
             currentCard.hash
     in
-    div
+    button
         [ class "card "
         , Animator.Inline.backgroundColor timelineCard <|
             \state ->
@@ -446,9 +481,10 @@ main =
 
 
 subscriptions model =
-    -- (4) - turning out Animator into a subscription
-    -- this is where the animator will decide to have a subscription to AnimationFrame or not.
-    A.toSubscription Tick model (animator model)
+    Sub.batch
+        [ A.toSubscription Tick model (animator model)
+        , Browser.Events.onResize WindowSize
+        ]
 
 
 

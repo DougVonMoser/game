@@ -72,10 +72,50 @@ body {
     width: 100%;
     overflow: hidden;
 }
+
 .board-container {
+    width: 100vw;
+    height: 100vh;
     position: relative;
-    width: 100%;
+    
 }
+
+.cards {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+    height: calc(100vh - 104px);
+    position: absolute;
+    top: 52px;
+}
+
+.card {
+    border: solid;
+    border-radius: 5px;
+    box-shadow: 6px 8px 6px 0px #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 4px;
+    width: calc(49vw - 16px);
+    height: calc( calc(100vh - calc(104px + 32px)) / 5);
+
+    @media only screen and (min-width: 500px) {
+        height: calc( calc(100vh - calc(104px + 24px)) / 4);
+        width: calc(10vw);
+    }
+
+    @media only screen and (min-width: 900px) {
+        width: 19vw;
+    }
+    @media only screen and (min-width: 1400px) {
+        width: 17vw;
+    }
+}
+
+
 .switch-to-codegiver {
     box-sizing: border;
     position: fixed;
@@ -96,9 +136,7 @@ body {
     margin: 8px;
     font-size: 36px;
     opacity: 0.5;
-
 }
-
 
 .admin-turned {
     .word {
@@ -109,49 +147,13 @@ body {
         border: none;
     }
 }
+
 .admin-turned, .admin-unturned {
     display: flex;
     align-items: center;
     justify-content: center;
 
 }
-
-
-.cards {
-    display: flex;
-    flex-wrap: wrap;
-    align-content: center;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    margin-top: 32px;
-}
-
-.card {
-    border: solid;
-    border-radius: 5px;
-    box-sizing: border-box;
-    box-shadow: 6px 8px 6px 0px #666;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 4px;
-    width: calc(49vw - 16px);
-    height: 7vh;
-
-    @media only screen and (min-width: 500px) {
-        height: 17vh;
-        width: calc(24vw - 16px);
-    }
-
-    @media only screen and (min-width: 900px) {
-        width: 19vw;
-    }
-    @media only screen and (min-width: 1400px) {
-        width: 17vw;
-    }
-}
-
 
 .admin-unturned:hover {
     cursor: pointer;

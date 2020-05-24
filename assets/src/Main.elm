@@ -128,28 +128,6 @@ update msg model =
 
 
 view model =
-    div []
-        [ toolbarView model
-        , bodyView model
-        ]
-
-
-toolbarView : Model -> Html Msg
-toolbarView model =
-    let
-        f x =
-            span [ class "in-room" ] [ text x ]
-    in
-    case model of
-        InGame (Room room) _ ->
-            f room
-
-        _ ->
-            text ""
-
-
-bodyView : Model -> Html Msg
-bodyView model =
     case model of
         ChoosingHowToStartGame maybeRoom roomTypings ->
             div [ class "home-container" ]
@@ -165,6 +143,20 @@ bodyView model =
 
         InGame _ gameModel ->
             Html.map GotGameMsg <| Game.view gameModel
+
+
+toolbarView : Model -> Html Msg
+toolbarView model =
+    let
+        f x =
+            span [ class "in-room" ] [ text x ]
+    in
+    case model of
+        InGame (Room room) _ ->
+            f room
+
+        _ ->
+            text ""
 
 
 joinButton roomTypings =
@@ -247,4 +239,3 @@ subscriptions model =
                 sockets
                     ++ [ Sub.map GotGameMsg (Game.subscriptions gameModel)
                        ]
-
