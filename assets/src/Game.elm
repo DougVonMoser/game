@@ -7,6 +7,7 @@ import Browser
 import Browser.Dom
 import Browser.Events
 import Color
+import Firework
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
