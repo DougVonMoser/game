@@ -61,9 +61,20 @@ update msg model =
         JoinedARoom room ->
             case model of
                 ChoosingHowToStartGame _ _ ->
-                    ( InGame room Game.initModel
-                    , Socket.toSocket <|
-                        E.object [ ( "action", E.string "elmSaysStartCardGame" ) ]
+                    let
+                        ( gameModel, gameCmd ) =
+                            Game.init ()
+                    in
+                    ( InGame room gameModel
+                    , Cmd.batch
+                        [ Cmd.map GotGameMsg gameCmd
+                        , Socket.toSocket <|
+                            E.object
+                                [ ( "action"
+                                  , E.string "elmSaysStartCardGame"
+                                  )
+                                ]
+                        ]
                     )
 
                 _ ->
