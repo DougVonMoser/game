@@ -252,11 +252,57 @@ updateCardsToLatest freshFromServerCards existingCards =
 
 view : Model -> Html Msg
 view model =
-    div [ id "board-container", class "board-container" ]
+    div [ id "board-container", class "board-container" ] <|
         [ cardsView model.window model.cards model.gameStatus
         , gameFinishedPrompt model.gameStatus
         , switchToCodeGiverView model.gameStatus
         ]
+            ++ scoreboards model
+
+
+scoreboards model =
+    case model.gameStatus of
+        Playing Audience ->
+            [ redScoreBoardView model.cards
+            , blueScoreBoardView model.cards
+            ]
+
+        _ ->
+            []
+
+
+howManyUnTurnedCardsOfATeam : Team -> List GameCard -> Int
+howManyUnTurnedCardsOfATeam team cards =
+    cards
+        |> List.filter ((==) team << .originallyColored)
+        |> List.filter isUnTurned
+        |> List.length
+
+
+blueScoreBoardView cards =
+    let
+        howManyUnTurneds =
+            howManyUnTurnedCardsOfATeam Blue (List.map A.current cards)
+    in
+    div
+        [ class "blue-sb sb"
+        , style "right" "16px"
+        , style "background-color" (Color.toCssString <| teamToColor Blue)
+        ]
+        [ text <| String.fromInt howManyUnTurneds ]
+
+
+redScoreBoardView cards =
+    let
+        howManyUnTurneds =
+            howManyUnTurnedCardsOfATeam Red (List.map A.current cards)
+    in
+    div
+        [ class "red-sb sb"
+        , style "left" "16px"
+        , style "background-color" (Color.toCssString <| teamToColor Red)
+        ]
+        [ text <| String.fromInt howManyUnTurneds ]
 
 
 type alias Window =
@@ -321,7 +367,8 @@ gameFinishedPrompt gameStatus =
         ATeamWon team ->
             div [ class <| "finished-prompt " ++ teamToString team ]
                 [ h1 [ class "team-won" ] [ text <| "yay " ++ teamToString team ++ " team won" ]
-                , img [ class "win-gif", src "https://media.giphy.com/media/aZXRIHxo9saPe/giphy.gif" ] []
+
+                --, img [ class "win-gif", src "https://media.giphy.com/media/aZXRIHxo9saPe/giphy.gif" ] []
                 , button [ class "restart-game", onClick UserClickedRestartGame ] [ text "PLAY AGAIN" ]
                 ]
 
