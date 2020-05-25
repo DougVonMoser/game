@@ -126,7 +126,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
         UserClickedOnHash hash ->
-            ( model, alsoToSocket <| encodeHash hash )
+            case model.gameStatus of
+                Playing _ ->
+                    ( model, alsoToSocket <| encodeHash hash )
+
+                _ ->
+                    ( model, Cmd.none )
 
         UserClickedSwitchToCodegiver ->
             ( { model | gameStatus = Playing CodeGiver }, Cmd.none )
@@ -315,7 +320,7 @@ view model =
 
 scoreboards model =
     case model.gameStatus of
-        Playing Audience ->
+        Playing _ ->
             [ redScoreBoardView model.cards
             , blueScoreBoardView model.cards
             ]
@@ -459,39 +464,49 @@ unTurnedCountOfTeam cards team =
 
 cardsView : Window -> List (A.Timeline GameCard) -> GameStatus -> Html Msg
 cardsView window cards gameStatus =
+    let
+        --( cardHeight, cardWidth ) =
+        cardLengths =
+            calcCardHeightWidth window
+    in
     div [ class "cards noselect" ] <|
         case gameStatus of
             Playing Audience ->
-                List.indexedMap (audienceCardView window) cards
+                List.indexedMap (audienceCardView cardLengths) cards
 
             Playing CodeGiver ->
-                List.indexedMap codeGiverCardView cards
+                List.indexedMap (codeGiverCardView cardLengths) cards
 
             ATeamWon _ ->
-                List.indexedMap (audienceCardView window) cards
+                List.indexedMap (audienceCardView cardLengths) cards
 
             _ ->
                 []
 
 
-codeGiverCardView : Int -> A.Timeline GameCard -> Html Msg
-codeGiverCardView count timelineCard =
+codeGiverCardView : ( Int, Int ) -> Int -> A.Timeline GameCard -> Html Msg
+codeGiverCardView ( cardHeight, cardWidth ) count timelineCard =
     let
         currentCard =
             A.current timelineCard
+
+        strikeThroughClass =
+            if isUnTurned currentCard then
+                ""
+
+            else
+                " strikethrough"
     in
     div
         [ class "card "
+        , Html.Attributes.style "height" (String.fromInt cardHeight ++ "px")
+        , Html.Attributes.style "width" (String.fromInt cardWidth ++ "px")
         , Animator.Inline.backgroundColor timelineCard <|
             \state ->
-                if isUnTurned state then
-                    teamToColor currentCard.originallyColored
-
-                else
-                    Color.orange
+                teamToColor currentCard.originallyColored
         ]
         [ span
-            [ class "word"
+            [ class <| "word" ++ strikeThroughClass
             , Animator.Inline.textColor timelineCard <|
                 \state ->
                     if isUnTurned state then
@@ -540,14 +555,11 @@ calcHowManyColumns rows hardCodedNumberOfCards =
         divResult
 
 
-audienceCardView : Window -> Int -> A.Timeline GameCard -> Html Msg
-audienceCardView window count timelineCard =
+audienceCardView : ( Int, Int ) -> Int -> A.Timeline GameCard -> Html Msg
+audienceCardView ( cardHeight, cardWidth ) count timelineCard =
     let
         currentCard =
             A.current timelineCard
-
-        ( cardHeight, cardWidth ) =
-            calcCardHeightWidth window
 
         buttonOrDiv =
             if A.current timelineCard |> ((==) UnTurned << .turnedStatus) then
