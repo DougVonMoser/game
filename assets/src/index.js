@@ -146,6 +146,6 @@ function generateRoomName(length) {
 
 
 //page navigation away warning
-//  window.onbeforeunload = function() {
-//      return true;
-//  };
+window.onbeforeunload = function() {
+  return true;
+};

@@ -132,6 +132,7 @@ body {
     justify-content: center;
     align-items: center;
     font-size: 40px;
+    color: white;
 }
 .sb-endgame {
     position: absolute;
@@ -152,6 +153,10 @@ body {
 
 .red-background {
     background-color: $red;
+}
+
+.room {
+    opacity: 0.4;
 }
 
 .switch-to-codegiver {

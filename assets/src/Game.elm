@@ -34,6 +34,7 @@ type alias Model =
     { cards : List (A.Timeline GameCard)
     , gameStatus : GameStatus
     , window : Window
+    , room : String
     , firework : System Firework.Firework
     }
 
@@ -49,17 +50,22 @@ type AudienceOrCodeGiver
     | CodeGiver
 
 
-initModel =
+initModel room =
     { cards = []
     , gameStatus = WaitingOnCardsFromServer
     , window = { width = 800, height = 500 }
+    , room = room
     , firework = Firework.fireworkInit
     }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( initModel
+type alias Room =
+    String
+
+
+init : Room -> ( Model, Cmd Msg )
+init room =
+    ( initModel room
     , Browser.Dom.getViewport
         |> Task.attempt
             (\viewportResult ->
@@ -311,6 +317,7 @@ view : Model -> Html Msg
 view model =
     div [ id "board-container", class "board-container" ] <|
         [ cardsView model.window model.cards model.gameStatus
+        , roomView model.gameStatus model.room
         , gameFinishedPrompt model.gameStatus
         , switchToCodeGiverView model.gameStatus
         , Firework.view model.firework
@@ -327,6 +334,15 @@ scoreboards model =
 
         _ ->
             []
+
+
+roomView gameStatus room =
+    case gameStatus of
+        Playing _ ->
+            div [ class "restart-game room" ] [ text <| "in room " ++ room ]
+
+        _ ->
+            text ""
 
 
 howManyUnTurnedCardsOfATeam : Team -> List GameCard -> Int

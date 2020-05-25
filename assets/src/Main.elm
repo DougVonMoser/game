@@ -62,8 +62,11 @@ update msg model =
             case model of
                 ChoosingHowToStartGame _ _ ->
                     let
+                        (Room roomie) =
+                            room
+
                         ( gameModel, gameCmd ) =
-                            Game.init ()
+                            Game.init roomie
                     in
                     ( InGame room gameModel
                     , Cmd.batch
