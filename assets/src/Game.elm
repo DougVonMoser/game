@@ -119,7 +119,7 @@ type Msg
     | UserClickedSwitchToCodegiver
     | WindowSize Int Int
     | ParticleMsg (System.Msg Firework.Firework)
-    | Detonate Int Team
+    | CheckForFireworks
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -162,24 +162,21 @@ update message model =
             , Cmd.none
             )
 
-        Detonate thisManyTimes team ->
-            let
-                ( updated_firework, fireworkCmd ) =
-                    detonateTeam team model thisManyTimes
-            in
-            ( { model | firework = updated_firework }, fireworkCmd )
+        CheckForFireworks ->
+            ( checkForFireworksUpdate model, Cmd.none )
 
 
-detonateAgain count team =
-    if count > 0 then
-        Task.perform (always (Detonate (count - 1) team)) <|
-            Process.sleep 90
+checkForFireworksUpdate model =
+    case model.gameStatus of
+        ATeamWon team ->
+            { model | firework = detonateTeam team model }
 
-    else
-        Cmd.none
+        _ ->
+            --{ model | firework = detonateTeam Red model }
+            model
 
 
-detonateTeam team model thisManyTimes =
+detonateTeam team model =
     let
         color =
             case team of
@@ -192,12 +189,10 @@ detonateTeam team model thisManyTimes =
                 NoTeam ->
                     Firework.Green
     in
-    ( Firework.fireworkUpdate
+    Firework.fireworkUpdate
         model.firework
         color
         model.window
-    , detonateAgain thisManyTimes team
-    )
 
 
 handleReceivedCardDValue : D.Value -> Model -> ( Model, Cmd Msg )
@@ -230,21 +225,12 @@ handleNewGameCards serverCards model =
 
                 updated_status =
                     updateStatusFromCards serverCards model.gameStatus
-
-                ( updated_firework, fireworkCmd ) =
-                    case updated_status of
-                        ATeamWon team ->
-                            detonateTeam team model 100
-
-                        _ ->
-                            ( model.firework, Cmd.none )
             in
             ( { model
                 | cards = updated_cards
                 , gameStatus = updated_status
-                , firework = updated_firework
               }
-            , fireworkCmd
+            , Cmd.none
             )
 
 
@@ -354,7 +340,6 @@ blueScoreBoardView cards =
     div
         [ class "blue-sb sb"
         , style "right" "16px"
-        , onClick <| Detonate 10 Blue
         , style "background-color" (Color.toCssString <| teamToColor Blue)
         ]
         [ text <| String.fromInt howManyUnTurneds ]
@@ -368,7 +353,6 @@ redScoreBoardView cards =
     div
         [ class "red-sb sb"
         , style "left" "16px"
-        , onClick <| Detonate 4 Red
         , style "background-color" (Color.toCssString <| teamToColor Red)
         ]
         [ text <| String.fromInt howManyUnTurneds ]
@@ -434,11 +418,12 @@ gameFinishedPrompt gameStatus =
             text ""
 
         ATeamWon team ->
-            div [ class <| "finished-prompt " ++ teamToString team ]
-                [ h1 [ class "team-won" ] [ text <| "yay " ++ teamToString team ++ " team won" ]
-
-                --, img [ class "win-gif", src "https://media.giphy.com/media/aZXRIHxo9saPe/giphy.gif" ] []
-                , button [ class "restart-game", onClick UserClickedRestartGame ] [ text "PLAY AGAIN" ]
+            div []
+                [ button [ class "restart-game", onClick UserClickedRestartGame ] [ text "PLAY AGAIN" ]
+                , div
+                    [ class <| "sb-endgame " ++ teamToString team ++ "-background"
+                    ]
+                    [ text <| teamToString team ++ " wins the game!" ]
                 ]
 
 
@@ -481,6 +466,9 @@ cardsView window cards gameStatus =
 
             Playing CodeGiver ->
                 List.indexedMap codeGiverCardView cards
+
+            ATeamWon _ ->
+                List.indexedMap (audienceCardView window) cards
 
             _ ->
                 []
@@ -558,9 +546,6 @@ audienceCardView window count timelineCard =
         currentCard =
             A.current timelineCard
 
-        hash =
-            currentCard.hash
-
         ( cardHeight, cardWidth ) =
             calcCardHeightWidth window
 
@@ -582,7 +567,7 @@ audienceCardView window count timelineCard =
 
                 else
                     teamToColor currentCard.originallyColored
-        , onClick <| UserClickedOnHash hash
+        , onClick <| UserClickedOnHash currentCard.hash
         ]
         [ span
             [ class "word"
@@ -653,6 +638,7 @@ subscriptions model =
         [ A.toSubscription Tick model (animator model)
         , Browser.Events.onResize WindowSize
         , System.sub [] ParticleMsg model.firework
+        , Time.every 80 (always CheckForFireworks)
         ]
 
 

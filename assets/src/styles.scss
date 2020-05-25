@@ -42,9 +42,12 @@ body {
     margin: 40px;
 }
 .restart-game {
-    padding: 16px;
+    position: fixed; 
+    top: 0;
+    left: 0;
+    margin: 16px;
+    padding: 4px 16px;
     border-radius: 5px;
-    margin: 40px;
 }
 
 .score-container {
@@ -122,13 +125,31 @@ body {
     width: calc(50% - 24px);
     height: 128px;
     margin: 16px 0;
-    
     border-radius: 6px;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 40px;
+}
+.sb-endgame {
+    position: absolute;
+    bottom: 0;
+    width: calc(100% - 24px);
+    height: 128px;
+    margin: 16px 12px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+}
 
+.blue-background {
+    background-color: $blue;
+}
+
+.red-background {
+    background-color: $red;
 }
 
 .switch-to-codegiver {
