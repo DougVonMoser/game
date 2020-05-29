@@ -373,6 +373,7 @@ redScoreBoardView cards =
     in
     div
         [ class "red-sb sb"
+        , style "opacity" "0.5"
         , style "left" "16px"
         , style "background-color" (Color.toCssString <| teamToColor Red)
         ]
