@@ -5,7 +5,7 @@ import Animator.Css
 import Animator.Inline
 import Browser
 import Browser.Dom
-import Browser.Events
+import Browser.Events exposing (Visibility(..))
 import Color
 import Firework
 import Html exposing (..)
@@ -38,13 +38,18 @@ type alias Model =
     , window : Window
     , room : String
     , firework : System Firework.Firework
+    , visible : Browser.Events.Visibility
     }
 
 
 type GameStatus
     = WaitingOnCardsFromServer
     | Playing AudienceOrCodeGiver
-    | ATeamWon Team
+    | ATeamWon Team IsRestartButtonEnabled
+
+
+type alias IsRestartButtonEnabled =
+    Bool
 
 
 type AudienceOrCodeGiver
@@ -60,6 +65,7 @@ initModel room =
     , window = { width = 800, height = 500 }
     , room = room
     , firework = Firework.fireworkInit
+    , visible = Visible
     }
 
 
@@ -129,7 +135,8 @@ type Msg
     | UserClickedSwitchToCodegiver
     | WindowSize Int Int
     | ParticleMsg (System.Msg Firework.Firework)
-    | CheckForFireworks
+    | CheckForFireworks Team
+    | VisibilityUpdate Visibility
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -150,7 +157,16 @@ update message model =
             ( { model | gameStatus = Playing Audience }, Cmd.none )
 
         UserClickedRestartGame ->
-            ( model, restartGameSameRoom <| E.string "" )
+            case model.gameStatus of
+                ATeamWon team _ ->
+                    ( { model
+                        | gameStatus = ATeamWon team False
+                      }
+                    , restartGameSameRoom <| E.string ""
+                    )
+
+                _ ->
+                    ( model, Cmd.none )
 
         Tick newTime ->
             ( A.update newTime (animator model) model
@@ -177,18 +193,11 @@ update message model =
             , Cmd.none
             )
 
-        CheckForFireworks ->
-            ( checkForFireworksUpdate model, Cmd.none )
+        CheckForFireworks team ->
+            ( { model | firework = detonateTeam team model }, Cmd.none )
 
-
-checkForFireworksUpdate model =
-    case model.gameStatus of
-        ATeamWon team ->
-            { model | firework = detonateTeam team model }
-
-        _ ->
-            --{ model | firework = detonateTeam Red model }
-            model
+        VisibilityUpdate vUpdate ->
+            ( { model | visible = vUpdate }, Cmd.none )
 
 
 detonateTeam team model =
@@ -235,7 +244,7 @@ handleNewGameCards serverCards model =
             in
             ( { model | cards = updated_cards, gameStatus = Playing Audience }, Cmd.none )
 
-        ATeamWon _ ->
+        ATeamWon _ _ ->
             ( { model
                 | cards = List.map A.init serverCards
                 , gameStatus = Playing Audience
@@ -290,10 +299,10 @@ calcHowFlashy cards team scoreboard =
 updateStatusFromCards : List GameCard -> GameStatus -> GameStatus
 updateStatusFromCards cards currentStatus =
     if List.filter isRedCard cards |> List.all isTurned then
-        ATeamWon Red
+        ATeamWon Red True
 
     else if List.filter isBlueCard cards |> List.all isTurned then
-        ATeamWon Blue
+        ATeamWon Blue True
 
     else
         currentStatus
@@ -486,7 +495,7 @@ switchToCodeGiverView gameStatus =
             button [ class "switch-to-codegiver", onClick UserClickedSwitchToAudience ]
                 [ text "Switch to Audience View" ]
 
-        ATeamWon _ ->
+        ATeamWon _ _ ->
             text ""
 
 
@@ -498,9 +507,14 @@ gameFinishedPrompt gameStatus =
         Playing _ ->
             text ""
 
-        ATeamWon team ->
+        ATeamWon team buttonEnabled ->
             div []
-                [ button [ class "restart-game", onClick UserClickedRestartGame ] [ text "PLAY AGAIN" ]
+                [ button
+                    [ disabled (not buttonEnabled)
+                    , class "restart-game"
+                    , onClick UserClickedRestartGame
+                    ]
+                    [ text "PLAY AGAIN" ]
                 , div
                     [ class <| "sb-endgame " ++ teamToString team ++ "-background"
                     ]
@@ -553,7 +567,7 @@ cardsView window cards gameStatus =
             Playing CodeGiver ->
                 List.indexedMap (codeGiverCardView cardLengths) cards
 
-            ATeamWon _ ->
+            ATeamWon _ _ ->
                 List.indexedMap (audienceCardView cardLengths) cards
 
             _ ->
@@ -726,12 +740,24 @@ findTimelineGameCard listy x =
 
 
 subscriptions model =
-    Sub.batch
-        [ A.toSubscription Tick model (animator model)
-        , Browser.Events.onResize WindowSize
-        , System.sub [] ParticleMsg model.firework
-        , Time.every 80 (always CheckForFireworks)
-        ]
+    let
+        foreverSubs =
+            [ A.toSubscription Tick model (animator model)
+            , Browser.Events.onResize WindowSize
+            , System.sub [] ParticleMsg model.firework
+            , Browser.Events.onVisibilityChange VisibilityUpdate
+            ]
+    in
+    case ( model.gameStatus, model.visible ) of
+        ( ATeamWon winningTeam _, Visible ) ->
+            Sub.batch <|
+                [ Time.every 30 (always (CheckForFireworks winningTeam))
+                ]
+                    ++ foreverSubs
+
+        _ ->
+            Sub.batch
+                foreverSubs
 
 
 
