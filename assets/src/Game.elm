@@ -32,6 +32,8 @@ import Time
 
 type alias Model =
     { cards : List (A.Timeline GameCard)
+    , redScoreBoard : A.Timeline SBThing
+    , blueScoreBoard : A.Timeline SBThing
     , gameStatus : GameStatus
     , window : Window
     , room : String
@@ -53,6 +55,8 @@ type AudienceOrCodeGiver
 initModel room =
     { cards = []
     , gameStatus = WaitingOnCardsFromServer
+    , redScoreBoard = A.init Static
+    , blueScoreBoard = A.init Static
     , window = { width = 800, height = 500 }
     , room = room
     , firework = Firework.fireworkInit
@@ -216,6 +220,11 @@ handleReceivedCardDValue x model =
             Debug.todo "SHFAAAAACK"
 
 
+type SBThing
+    = Static
+    | Pulsing Float
+
+
 handleNewGameCards : List GameCard -> Model -> ( Model, Cmd Msg )
 handleNewGameCards serverCards model =
     case model.gameStatus of
@@ -227,7 +236,14 @@ handleNewGameCards serverCards model =
             ( { model | cards = updated_cards, gameStatus = Playing Audience }, Cmd.none )
 
         ATeamWon _ ->
-            ( { model | cards = List.map A.init serverCards, gameStatus = Playing Audience }, Cmd.none )
+            ( { model
+                | cards = List.map A.init serverCards
+                , gameStatus = Playing Audience
+                , redScoreBoard = A.init Static
+                , blueScoreBoard = A.init Static
+              }
+            , Cmd.none
+            )
 
         Playing _ ->
             let
@@ -236,13 +252,39 @@ handleNewGameCards serverCards model =
 
                 updated_status =
                     updateStatusFromCards serverCards model.gameStatus
+
+                updated_redSB =
+                    calcHowFlashy serverCards Red model.redScoreBoard
+
+                updated_blueSB =
+                    calcHowFlashy serverCards Blue model.blueScoreBoard
             in
             ( { model
                 | cards = updated_cards
                 , gameStatus = updated_status
+                , redScoreBoard = updated_redSB
+                , blueScoreBoard = updated_blueSB
               }
             , Cmd.none
             )
+
+
+calcHowFlashy cards team scoreboard =
+    let
+        count =
+            howManyUnTurnedCardsOfATeam team cards
+    in
+    if count == 3 then
+        A.go A.immediately (Pulsing 2000) scoreboard
+
+    else if count == 2 then
+        A.go A.immediately (Pulsing 1000) scoreboard
+
+    else if count == 1 then
+        A.go A.immediately (Pulsing 500) scoreboard
+
+    else
+        A.go A.immediately Static scoreboard
 
 
 updateStatusFromCards : List GameCard -> GameStatus -> GameStatus
@@ -328,8 +370,8 @@ view model =
 scoreboards model =
     case model.gameStatus of
         Playing _ ->
-            [ redScoreBoardView model.cards
-            , blueScoreBoardView model.cards
+            [ redScoreBoardView model.cards model.redScoreBoard
+            , blueScoreBoardView model.cards model.blueScoreBoard
             ]
 
         _ ->
@@ -353,27 +395,44 @@ howManyUnTurnedCardsOfATeam team cards =
         |> List.length
 
 
-blueScoreBoardView cards =
+blueScoreBoardView cards blueTimeline =
     let
         howManyUnTurneds =
             howManyUnTurnedCardsOfATeam Blue (List.map A.current cards)
     in
     div
         [ class "blue-sb sb"
+        , Animator.Inline.opacity blueTimeline <|
+            \state ->
+                case state of
+                    Static ->
+                        A.at (toFloat howManyUnTurneds / 7)
+
+                    Pulsing milliseconds ->
+                        A.loop (A.millis milliseconds) (A.wrap 0 1)
         , style "right" "16px"
         , style "background-color" (Color.toCssString <| teamToColor Blue)
         ]
         [ text <| String.fromInt howManyUnTurneds ]
 
 
-redScoreBoardView cards =
+redScoreBoardView cards redTimeline =
     let
         howManyUnTurneds =
             howManyUnTurnedCardsOfATeam Red (List.map A.current cards)
     in
     div
         [ class "red-sb sb"
-        , style "opacity" "0.5"
+        , Animator.Inline.opacity redTimeline <|
+            \state ->
+                case state of
+                    Static ->
+                        A.at (toFloat howManyUnTurneds / 7)
+
+                    Pulsing milliseconds ->
+                        A.loop (A.millis milliseconds) (A.wrap 0 1)
+
+        --, style "opacity" "0.5"
         , style "left" "16px"
         , style "background-color" (Color.toCssString <| teamToColor Red)
         ]
@@ -621,7 +680,15 @@ audienceCardView ( cardHeight, cardWidth ) count timelineCard =
 
 animator : Model -> A.Animator Model
 animator model =
-    thing model
+    List.foldl folder A.animator model.cards
+        |> A.watching .redScoreBoard
+            (\newSb model2 ->
+                { model2 | redScoreBoard = newSb }
+            )
+        |> A.watching .blueScoreBoard
+            (\newSb model2 ->
+                { model2 | blueScoreBoard = newSb }
+            )
 
 
 folder : A.Timeline GameCard -> A.Animator Model -> A.Animator Model
@@ -656,10 +723,6 @@ findTimelineGameCard listy x =
 
         Nothing ->
             Debug.todo "SHFUCK"
-
-
-thing model =
-    List.foldl folder A.animator model.cards
 
 
 subscriptions model =
