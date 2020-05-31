@@ -284,13 +284,13 @@ calcHowFlashy cards team scoreboard =
             howManyUnTurnedCardsOfATeam team cards
     in
     if count == 3 then
-        A.go A.immediately (Pulsing 2000) scoreboard
+        A.go A.slowly (Pulsing 2000) scoreboard
 
     else if count == 2 then
-        A.go A.immediately (Pulsing 1000) scoreboard
+        A.go A.slowly (Pulsing 1000) scoreboard
 
     else if count == 1 then
-        A.go A.immediately (Pulsing 500) scoreboard
+        A.go A.slowly (Pulsing 500) scoreboard
 
     else
         A.go A.immediately Static scoreboard
@@ -418,7 +418,7 @@ blueScoreBoardView cards blueTimeline =
                         A.at (toFloat howManyUnTurneds / 7)
 
                     Pulsing milliseconds ->
-                        A.loop (A.millis milliseconds) (A.wrap 0 1)
+                        A.loop (A.millis milliseconds) (A.wave 0 1)
         , style "right" "16px"
         , style "background-color" (Color.toCssString <| teamToColor Blue)
         ]
@@ -439,7 +439,7 @@ redScoreBoardView cards redTimeline =
                         A.at (toFloat howManyUnTurneds / 7)
 
                     Pulsing milliseconds ->
-                        A.loop (A.millis milliseconds) (A.wrap 0 1)
+                        A.loop (A.millis milliseconds) (A.wave 0 1)
 
         --, style "opacity" "0.5"
         , style "left" "16px"
