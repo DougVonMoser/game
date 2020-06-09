@@ -226,7 +226,7 @@ handleReceivedCardDValue x model =
             handleNewGameCards serverCards model
 
         Err _ ->
-            Debug.todo "SHFAAAAACK"
+            ( model, Cmd.none )
 
 
 type SBThing
@@ -352,8 +352,7 @@ updateCardsToLatest freshFromServerCards existingCards =
                             existingCard
 
                 Nothing ->
-                    Debug.todo "SHITTTTT"
-         --existingCard
+                    existingCard
         )
         existingCards
 
@@ -660,6 +659,7 @@ audienceCardView ( cardHeight, cardWidth ) count timelineCard =
     in
     buttonOrDiv
         [ class "card "
+        , onClick <| UserClickedOnHash currentCard.hash
         , Html.Attributes.style "height" (String.fromInt cardHeight ++ "px")
         , Html.Attributes.style "width" (String.fromInt cardWidth ++ "px")
         , Animator.Inline.backgroundColor timelineCard <|
@@ -669,7 +669,6 @@ audienceCardView ( cardHeight, cardWidth ) count timelineCard =
 
                 else
                     teamToColor currentCard.originallyColored
-        , onClick <| UserClickedOnHash currentCard.hash
         ]
         [ span
             [ class "word"
@@ -736,7 +735,8 @@ findTimelineGameCard listy x =
             zz
 
         Nothing ->
-            Debug.todo "SHFUCK"
+            -- this will hopefully never hit
+            x
 
 
 subscriptions model =
