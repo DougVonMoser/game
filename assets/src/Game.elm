@@ -645,25 +645,34 @@ calcCardTopAndLeft window count ( cardHeight, cardWidth ) =
             calcHowManyColumns howManyPerRow 20
 
         whatRowAmIIn =
-            if count < 4 then
+            if count < howManyPerRow then
                 0
 
-            else if count < 8 then
+            else if count < (howManyPerRow * 2) then
                 1
 
-            else if count < 12 then
+            else if count < (howManyPerRow * 3) then
                 2
 
-            else if count < 16 then
+            else if count < (howManyPerRow * 4) then
                 3
 
-            else
+            else if count < (howManyPerRow * 5) then
                 4
 
+            else if count < (howManyPerRow * 6) then
+                5
+
+            else if count < (howManyPerRow * 7) then
+                6
+
+            else
+                7
+
         whatColumnAmIIn =
-            modBy 4 count
+            modBy howManyPerRow count
     in
-    ( whatRowAmIIn * cardHeight, whatColumnAmIIn * cardWidth )
+    ( whatRowAmIIn * cardHeight + whatRowAmIIn * 8, whatColumnAmIIn * cardWidth + whatColumnAmIIn * 8 )
 
 
 calcCardHeightWidth : Window -> ( Int, Int )
