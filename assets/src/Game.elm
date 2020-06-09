@@ -346,7 +346,7 @@ updateCardsToLatest freshFromServerCards existingCards =
                 Just newCard ->
                     case existingTurnedStatus /= newCard.turnedStatus of
                         True ->
-                            A.go A.immediately newCard existingCard
+                            A.go A.slowly newCard existingCard
 
                         False ->
                             existingCard
@@ -716,6 +716,11 @@ px x =
     String.fromInt x ++ "px"
 
 
+pxF : Float -> String
+pxF x =
+    String.fromFloat x ++ "px"
+
+
 audienceCardView : Window -> ( Int, Int ) -> Int -> A.Timeline GameCard -> Html Msg
 audienceCardView window ( cardHeight, cardWidth ) count timelineCard =
     let
@@ -737,7 +742,16 @@ audienceCardView window ( cardHeight, cardWidth ) count timelineCard =
         , onClick <| UserClickedOnHash currentCard.hash
         , Html.Attributes.style "height" (px cardHeight)
         , Html.Attributes.style "width" (px cardWidth)
-        , Html.Attributes.style "top" (px cardTop)
+        , Html.Attributes.style "top"
+            (pxF <|
+                A.linear timelineCard <|
+                    \state ->
+                        if isUnTurned state then
+                            A.at (toFloat cardTop)
+
+                        else
+                            A.at 0
+            )
         , Html.Attributes.style "left" (px cardLeft)
         , Html.Attributes.style "z-index" (String.fromInt count)
         , Animator.Inline.backgroundColor timelineCard <|
