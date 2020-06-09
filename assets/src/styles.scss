@@ -86,6 +86,7 @@ body {
 }
 
 .cards {
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     align-content: center;
@@ -97,6 +98,7 @@ body {
 
 
 .card {
+    position: absolute;
     box-sizing: border-box;
     border: solid;
     border-radius: 5px;

@@ -551,23 +551,31 @@ unTurnedCountOfTeam cards team =
         |> List.length
 
 
+type alias CardPosition =
+    { height : Int
+    , width : Int
+    , top : Int
+    , left : Int
+    }
+
+
 cardsView : Window -> List (A.Timeline GameCard) -> GameStatus -> Html Msg
 cardsView window cards gameStatus =
     let
-        --( cardHeight, cardWidth ) =
-        cardLengths =
+        cardHeightAndWidth =
             calcCardHeightWidth window
     in
     div [ class "cards noselect" ] <|
         case gameStatus of
             Playing Audience ->
-                List.indexedMap (audienceCardView cardLengths) cards
+                List.indexedMap (audienceCardView window cardHeightAndWidth) cards
 
             Playing CodeGiver ->
-                List.indexedMap (codeGiverCardView cardLengths) cards
+                List.indexedMap (codeGiverCardView cardHeightAndWidth) cards
 
             ATeamWon _ _ ->
-                List.indexedMap (audienceCardView cardLengths) cards
+                -- maybe this should be codegiverview so everyone can see the true teams cards as fireworks go
+                List.indexedMap (audienceCardView window cardHeightAndWidth) cards
 
             _ ->
                 []
@@ -608,6 +616,56 @@ codeGiverCardView ( cardHeight, cardWidth ) count timelineCard =
         ]
 
 
+type alias Count =
+    Int
+
+
+type alias Top =
+    Int
+
+
+type alias Left =
+    Int
+
+
+calcCardTopAndLeft : Window -> Count -> ( Int, Int ) -> ( Top, Left )
+calcCardTopAndLeft window count ( cardHeight, cardWidth ) =
+    let
+        howManyPerRow =
+            if window.width < 351 then
+                3
+
+            else if window.width < 500 then
+                4
+
+            else
+                5
+
+        howManyColumns =
+            calcHowManyColumns howManyPerRow 20
+
+        whatRowAmIIn =
+            if count < 4 then
+                0
+
+            else if count < 8 then
+                1
+
+            else if count < 12 then
+                2
+
+            else if count < 16 then
+                3
+
+            else
+                4
+
+        whatColumnAmIIn =
+            modBy 4 count
+    in
+    ( whatRowAmIIn * cardHeight, whatColumnAmIIn * cardWidth )
+
+
 calcCardHeightWidth : Window -> ( Int, Int )
 calcCardHeightWidth window =
     let
@@ -644,8 +702,13 @@ calcHowManyColumns rows hardCodedNumberOfCards =
         divResult
 
 
-audienceCardView : ( Int, Int ) -> Int -> A.Timeline GameCard -> Html Msg
-audienceCardView ( cardHeight, cardWidth ) count timelineCard =
+px : Int -> String
+px x =
+    String.fromInt x ++ "px"
+
+
+audienceCardView : Window -> ( Int, Int ) -> Int -> A.Timeline GameCard -> Html Msg
+audienceCardView window ( cardHeight, cardWidth ) count timelineCard =
     let
         currentCard =
             A.current timelineCard
@@ -656,12 +719,18 @@ audienceCardView ( cardHeight, cardWidth ) count timelineCard =
 
             else
                 div
+
+        ( cardTop, cardLeft ) =
+            calcCardTopAndLeft window count ( cardHeight, cardWidth )
     in
     buttonOrDiv
         [ class "card "
         , onClick <| UserClickedOnHash currentCard.hash
-        , Html.Attributes.style "height" (String.fromInt cardHeight ++ "px")
-        , Html.Attributes.style "width" (String.fromInt cardWidth ++ "px")
+        , Html.Attributes.style "height" (px cardHeight)
+        , Html.Attributes.style "width" (px cardWidth)
+        , Html.Attributes.style "top" (px cardTop)
+        , Html.Attributes.style "left" (px cardLeft)
+        , Html.Attributes.style "z-index" (String.fromInt count)
         , Animator.Inline.backgroundColor timelineCard <|
             \state ->
                 if isUnTurned state then
