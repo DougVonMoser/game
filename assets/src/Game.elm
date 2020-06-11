@@ -30,6 +30,10 @@ import Time
 -- ---------------------------
 
 
+type alias TimelineID =
+    Int
+
+
 type alias Model =
     { cards : List (A.Timeline GameCard)
     , redScoreBoard : A.Timeline SBThing
@@ -93,12 +97,33 @@ init room =
     )
 
 
+
+-- this needs a timeline hash
+-- basically the placeholder/container/wrapper of a gamecard, whose state gets updated but position
+-- CardPosition = {timelineHash : Int, card : GameCard}
+-- leave the list empty to start
+-- generate a timeline ID when cards are given, track it by that
+-- when new cards come in, keep the dealingStatus and timelineID but change the cards
+-- serverCard by itself here wasn't lovely
+-- maybe have that be limited to the decoders... hm
+
+
 type alias GameCard =
     { turnedStatus : TurnedStatus
     , word : Word
     , originallyColored : Team
     , hash : Hash
+
+    -- above are data we get from the server
+    -- below are more for the presentation
+    , dealingStatus : DealingStatus
+    , timeLineID : Int
     }
+
+
+type DealingStatus
+    = Dealing
+    | Resting
 
 
 type TurnedStatus
@@ -234,19 +259,65 @@ type SBThing
     | Pulsing Float
 
 
+changeToResting : GameCard -> GameCard
+changeToResting card =
+    { card | dealingStatus = Resting }
+
+
+changeToDealing card =
+    { card | dealingStatus = Dealing }
+
+
+initFunction : Int -> GameCard -> A.Timeline GameCard
+initFunction timelineID card =
+    let
+        newUpdatedCard =
+            { card | timeLineID = timelineID, dealingStatus = Dealing }
+    in
+    A.interrupt
+        [ A.wait (A.millis 300)
+        , A.event (A.seconds 1) (changeToResting card)
+        ]
+        (A.init newUpdatedCard)
+
+
 handleNewGameCards : List GameCard -> Model -> ( Model, Cmd Msg )
 handleNewGameCards serverCards model =
     case model.gameStatus of
         WaitingOnCardsFromServer ->
             let
                 updated_cards =
-                    List.map A.init serverCards
+                    List.indexedMap initFunction serverCards
             in
             ( { model | cards = updated_cards, gameStatus = Playing Audience }, Cmd.none )
 
         ATeamWon _ _ ->
+            let
+                thingyFunction ( oldCard, newCard ) =
+                    let
+                        actualOldCard =
+                            A.current oldCard
+                    in
+                    A.queue
+                        [ A.wait (A.millis 300)
+                        , A.event (A.seconds 1) (changeToDealing actualOldCard)
+                        , A.wait (A.millis 300)
+                        , A.event (A.seconds 1) (changeToDealing newCard)
+                        , A.wait (A.millis 300)
+                        , A.event (A.seconds 1) (changeToResting newCard)
+                        ]
+                        oldCard
+
+                goFunction ( oldCard, newCard ) =
+                    let
+                        ignore =
+                            Debug.log "Hmm" newCard
+                    in
+                    A.go A.immediately newCard oldCard
+            in
             ( { model
-                | cards = List.map A.init serverCards
+                -- | cards = List.map thingyFunction (List.zip model.cards serverCards)
+                | cards = List.map goFunction (List.zip model.cards serverCards)
                 , gameStatus = Playing Audience
                 , redScoreBoard = A.init Static
                 , blueScoreBoard = A.init Static
@@ -346,7 +417,13 @@ updateCardsToLatest freshFromServerCards existingCards =
                 Just newCard ->
                     case existingTurnedStatus /= newCard.turnedStatus of
                         True ->
-                            A.go A.slowly newCard existingCard
+                            let
+                                updatedNewCard =
+                                    { eCC
+                                        | turnedStatus = newCard.turnedStatus
+                                    }
+                            in
+                            A.go A.quickly updatedNewCard existingCard
 
                         False ->
                             existingCard
@@ -746,14 +823,22 @@ audienceCardView window ( cardHeight, cardWidth ) count timelineCard =
             (pxF <|
                 A.linear timelineCard <|
                     \state ->
-                        if isUnTurned state then
-                            A.at (toFloat cardTop)
+                        if state.dealingStatus == Dealing then
+                            A.at 0
 
                         else
-                            A.at 0
+                            A.at (toFloat cardTop)
             )
-        , Html.Attributes.style "left" (px cardLeft)
-        , Html.Attributes.style "z-index" (String.fromInt count)
+        , Html.Attributes.style "left"
+            (pxF <|
+                A.linear timelineCard <|
+                    \state ->
+                        if state.dealingStatus == Dealing then
+                            A.at 0
+
+                        else
+                            A.at (toFloat cardLeft)
+            )
         , Animator.Inline.backgroundColor timelineCard <|
             \state ->
                 if isUnTurned state then
@@ -766,7 +851,10 @@ audienceCardView window ( cardHeight, cardWidth ) count timelineCard =
             [ class "word"
             , Animator.Inline.textColor timelineCard <|
                 \state ->
-                    if isUnTurned state then
+                    if state.dealingStatus == Dealing then
+                        Color.rgb255 230 233 237
+
+                    else if isUnTurned state then
                         Color.black
 
                     else
@@ -797,9 +885,9 @@ animator model =
 
 
 folder : A.Timeline GameCard -> A.Animator Model -> A.Animator Model
-folder x y =
+folder gameCard y =
     A.watching
-        (\model -> findTimelineGameCard model.cards x)
+        (\model -> findTimelineGameCard model.cards gameCard)
         updateThatTimeline
         y
 
@@ -808,7 +896,7 @@ updateThatTimeline : A.Timeline GameCard -> Model -> Model
 updateThatTimeline updatedCard model =
     let
         f old =
-            if sameCard (A.current old) (A.current updatedCard) then
+            if sameTimelineCard old updatedCard then
                 updatedCard
 
             else
@@ -822,13 +910,14 @@ updateThatTimeline updatedCard model =
 
 findTimelineGameCard : List (A.Timeline GameCard) -> A.Timeline GameCard -> A.Timeline GameCard
 findTimelineGameCard listy x =
-    case List.find ((==) x) listy of
+    case List.find (sameTimelineCard x) listy of
         Just zz ->
             zz
 
         Nothing ->
             -- this will hopefully never hit
-            x
+            --x
+            Debug.todo "SHFAAAAACK"
 
 
 subscriptions model =
@@ -889,6 +978,8 @@ funky hash original_color word =
         word
         original_color
         (Hash hash)
+        Dealing
+        420
 
 
 funky4 : String -> Team -> Team -> String -> GameCard
@@ -897,6 +988,8 @@ funky4 hash turnedOverBy original_color word =
         word
         original_color
         (Hash hash)
+        Resting
+        420
 
 
 teamDecoder =
@@ -946,6 +1039,21 @@ isUnTurned card =
 cardBelongsToTeam : GameCard -> Team -> Bool
 cardBelongsToTeam card team =
     card.originallyColored == team
+
+
+cardToTimelineID card =
+    card.timeLineID
+
+
+sameTimelineCard : A.Timeline GameCard -> A.Timeline GameCard -> Bool
+sameTimelineCard tC1 tC2 =
+    sameCardByTimelineID (A.current tC1) (A.current tC2)
+
+
+sameCardByTimelineID : GameCard -> GameCard -> Bool
+sameCardByTimelineID c1 c2 =
+    cardToTimelineID c1
+        == cardToTimelineID c2
 
 
 sameCard : GameCard -> GameCard -> Bool
