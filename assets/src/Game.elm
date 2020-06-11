@@ -274,7 +274,7 @@ initFunction timelineID card =
         newUpdatedCard =
             { card | timeLineID = timelineID, dealingStatus = Dealing }
     in
-    A.interrupt
+    A.queue
         [ A.wait (A.millis 300)
         , A.event (A.seconds 1) (changeToResting card)
         ]
@@ -309,10 +309,6 @@ handleNewGameCards serverCards model =
                         oldCard
 
                 goFunction ( oldCard, newCard ) =
-                    let
-                        ignore =
-                            Debug.log "Hmm" newCard
-                    in
                     A.go A.immediately newCard oldCard
             in
             ( { model
@@ -896,7 +892,9 @@ updateThatTimeline : A.Timeline GameCard -> Model -> Model
 updateThatTimeline updatedCard model =
     let
         f old =
-            if sameTimelineCard old updatedCard then
+            --oh boy
+            --if sameTimelineCard old updatedCard then
+            if sameCard (A.current old) (A.current updatedCard) then
                 updatedCard
 
             else
@@ -910,7 +908,9 @@ updateThatTimeline updatedCard model =
 
 findTimelineGameCard : List (A.Timeline GameCard) -> A.Timeline GameCard -> A.Timeline GameCard
 findTimelineGameCard listy x =
-    case List.find (sameTimelineCard x) listy of
+    --oh boy
+    -- case List.find (sameTimelineCard x) listy of
+    case List.find ((==) x) listy of
         Just zz ->
             zz
 
