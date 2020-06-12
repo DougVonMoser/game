@@ -271,12 +271,15 @@ changeToDealing card =
 initFunction : Int -> GameCard -> A.Timeline GameCard
 initFunction timelineID card =
     let
+        ignore =
+            Debug.log "timelineID" timelineID
+
         newUpdatedCard =
             { card | timeLineID = timelineID, dealingStatus = Dealing }
     in
     A.queue
         [ A.wait (A.millis 300)
-        , A.event (A.seconds 1) (changeToResting card)
+        , A.event (A.seconds 1) (changeToResting newUpdatedCard)
         ]
         (A.init newUpdatedCard)
 
@@ -894,7 +897,9 @@ updateThatTimeline updatedCard model =
         f old =
             --oh boy
             --if sameTimelineCard old updatedCard then
-            if sameCard (A.current old) (A.current updatedCard) then
+            if sameCardByTimelineID (A.current old) (A.current updatedCard) then
+                --below works without timelineID
+                --if sameCard (A.current old) (A.current updatedCard) then
                 updatedCard
 
             else
@@ -909,8 +914,9 @@ updateThatTimeline updatedCard model =
 findTimelineGameCard : List (A.Timeline GameCard) -> A.Timeline GameCard -> A.Timeline GameCard
 findTimelineGameCard listy x =
     --oh boy
-    -- case List.find (sameTimelineCard x) listy of
-    case List.find ((==) x) listy of
+    case List.find (sameTimelineCard x) listy of
+        --below works without timeline ID
+        --case List.find ((==) x) listy of
         Just zz ->
             zz
 
@@ -1041,10 +1047,6 @@ cardBelongsToTeam card team =
     card.originallyColored == team
 
 
-cardToTimelineID card =
-    card.timeLineID
-
-
 sameTimelineCard : A.Timeline GameCard -> A.Timeline GameCard -> Bool
 sameTimelineCard tC1 tC2 =
     sameCardByTimelineID (A.current tC1) (A.current tC2)
@@ -1052,8 +1054,7 @@ sameTimelineCard tC1 tC2 =
 
 sameCardByTimelineID : GameCard -> GameCard -> Bool
 sameCardByTimelineID c1 c2 =
-    cardToTimelineID c1
-        == cardToTimelineID c2
+    c1.timeLineID == c2.timeLineID
 
 
 sameCard : GameCard -> GameCard -> Bool
