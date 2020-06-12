@@ -271,9 +271,6 @@ changeToDealing card =
 initFunction : Int -> GameCard -> A.Timeline GameCard
 initFunction timelineID card =
     let
-        ignore =
-            Debug.log "timelineID" timelineID
-
         newUpdatedCard =
             { card | timeLineID = timelineID, dealingStatus = Dealing }
     in
@@ -300,26 +297,21 @@ handleNewGameCards serverCards model =
                     let
                         actualOldCard =
                             A.current oldCard
+
+                        newCardToUse =
+                            { newCard | timeLineID = actualOldCard.timeLineID, dealingStatus = Dealing }
                     in
                     A.queue
-                        [ A.wait (A.millis 300)
-                        , A.event (A.seconds 1) (changeToDealing actualOldCard)
-                        , A.wait (A.millis 300)
-                        , A.event (A.seconds 1) (changeToDealing newCard)
-                        , A.wait (A.millis 300)
-                        , A.event (A.seconds 1) (changeToResting newCard)
+                        [ A.event (A.seconds 1) (changeToDealing actualOldCard)
+                        , A.event (A.seconds 1) (changeToResting newCardToUse)
                         ]
                         oldCard
-
-                goFunction ( oldCard, newCard ) =
-                    A.go A.immediately newCard oldCard
             in
             ( { model
-                -- | cards = List.map thingyFunction (List.zip model.cards serverCards)
-                | cards = List.map goFunction (List.zip model.cards serverCards)
+                | cards = List.map thingyFunction (List.zip model.cards serverCards)
                 , gameStatus = Playing Audience
-                , redScoreBoard = A.init Static
-                , blueScoreBoard = A.init Static
+                , redScoreBoard = A.go A.slowly Static model.redScoreBoard
+                , blueScoreBoard = A.go A.slowly Static model.blueScoreBoard
               }
             , Cmd.none
             )
@@ -895,11 +887,7 @@ updateThatTimeline : A.Timeline GameCard -> Model -> Model
 updateThatTimeline updatedCard model =
     let
         f old =
-            --oh boy
-            --if sameTimelineCard old updatedCard then
             if sameCardByTimelineID (A.current old) (A.current updatedCard) then
-                --below works without timelineID
-                --if sameCard (A.current old) (A.current updatedCard) then
                 updatedCard
 
             else
@@ -913,17 +901,12 @@ updateThatTimeline updatedCard model =
 
 findTimelineGameCard : List (A.Timeline GameCard) -> A.Timeline GameCard -> A.Timeline GameCard
 findTimelineGameCard listy x =
-    --oh boy
     case List.find (sameTimelineCard x) listy of
-        --below works without timeline ID
-        --case List.find ((==) x) listy of
         Just zz ->
             zz
 
         Nothing ->
-            -- this will hopefully never hit
-            --x
-            Debug.todo "SHFAAAAACK"
+            x
 
 
 subscriptions model =
