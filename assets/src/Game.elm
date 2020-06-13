@@ -97,17 +97,6 @@ init room =
     )
 
 
-
--- this needs a timeline hash
--- basically the placeholder/container/wrapper of a gamecard, whose state gets updated but position
--- CardPosition = {timelineHash : Int, card : GameCard}
--- leave the list empty to start
--- generate a timeline ID when cards are given, track it by that
--- when new cards come in, keep the dealingStatus and timelineID but change the cards
--- serverCard by itself here wasn't lovely
--- maybe have that be limited to the decoders... hm
-
-
 type alias GameCard =
     { turnedStatus : TurnedStatus
     , word : Word
@@ -116,13 +105,16 @@ type alias GameCard =
 
     -- above are data we get from the server
     -- below are more for the presentation
+    -- kinda weird that theyre grouped like this.. hmm..
     , dealingStatus : DealingStatus
     , timeLineID : Int
     }
 
 
 type DealingStatus
-    = Dealing
+    = OffScreen
+    | Appearing
+    | Dealing
     | Resting
 
 
@@ -264,6 +256,11 @@ changeToResting card =
     { card | dealingStatus = Resting }
 
 
+changeDealingStatusTo : DealingStatus -> GameCard -> GameCard
+changeDealingStatusTo newDS card =
+    { card | dealingStatus = newDS }
+
+
 changeToDealing card =
     { card | dealingStatus = Dealing }
 
@@ -272,10 +269,12 @@ initFunction : Int -> GameCard -> A.Timeline GameCard
 initFunction timelineID card =
     let
         newUpdatedCard =
-            { card | timeLineID = timelineID, dealingStatus = Dealing }
+            { card | timeLineID = timelineID, dealingStatus = OffScreen }
     in
     A.queue
-        [ A.wait (A.millis 300)
+        [ A.event (A.millis 1) (changeDealingStatusTo OffScreen newUpdatedCard)
+        , A.event (A.seconds 1) (changeDealingStatusTo Dealing newUpdatedCard)
+        , A.wait (A.millis 500)
         , A.event (A.seconds 1) (changeToResting newUpdatedCard)
         ]
         (A.init newUpdatedCard)
@@ -789,6 +788,11 @@ pxF x =
     String.fromFloat x ++ "px"
 
 
+rotateDeg : Float -> String
+rotateDeg x =
+    "rotate(" ++ String.fromFloat x ++ "deg)"
+
+
 audienceCardView : Window -> ( Int, Int ) -> Int -> A.Timeline GameCard -> Html Msg
 audienceCardView window ( cardHeight, cardWidth ) count timelineCard =
     let
@@ -810,25 +814,49 @@ audienceCardView window ( cardHeight, cardWidth ) count timelineCard =
         , onClick <| UserClickedOnHash currentCard.hash
         , Html.Attributes.style "height" (px cardHeight)
         , Html.Attributes.style "width" (px cardWidth)
+        , Html.Attributes.style "transform"
+            (rotateDeg <|
+                A.move timelineCard <|
+                    \state ->
+                        --if state.dealingStatus == Dealing then
+                        --if True then
+                        --A.wrap 0 360 |> A.loop (A.millis 1000)
+                        --else
+                        A.at 0
+            )
         , Html.Attributes.style "top"
             (pxF <|
                 A.linear timelineCard <|
                     \state ->
-                        if state.dealingStatus == Dealing then
-                            A.at 0
+                        case state.dealingStatus of
+                            OffScreen ->
+                                A.at -1000
 
-                        else
-                            A.at (toFloat cardTop)
+                            Appearing ->
+                                A.at 50
+
+                            Dealing ->
+                                A.at 276
+
+                            Resting ->
+                                A.at (toFloat cardTop)
             )
         , Html.Attributes.style "left"
             (pxF <|
                 A.linear timelineCard <|
                     \state ->
-                        if state.dealingStatus == Dealing then
-                            A.at 0
+                        case state.dealingStatus of
+                            OffScreen ->
+                                A.at 764
 
-                        else
-                            A.at (toFloat cardLeft)
+                            Appearing ->
+                                A.at 50
+
+                            Dealing ->
+                                A.at 764
+
+                            Resting ->
+                                A.at (toFloat cardLeft)
             )
         , Animator.Inline.backgroundColor timelineCard <|
             \state ->
@@ -842,7 +870,7 @@ audienceCardView window ( cardHeight, cardWidth ) count timelineCard =
             [ class "word"
             , Animator.Inline.textColor timelineCard <|
                 \state ->
-                    if state.dealingStatus == Dealing then
+                    if state.dealingStatus /= Resting then
                         Color.rgb255 230 233 237
 
                     else if isUnTurned state then
