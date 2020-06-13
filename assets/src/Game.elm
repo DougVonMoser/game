@@ -271,12 +271,32 @@ initFunction timelineID card =
             { card | timeLineID = timelineID, dealingStatus = OffScreen }
     in
     A.queue
-        [ A.event (A.millis 1) (changeDealingStatusTo OffScreen newUpdatedCard)
-        , A.event (A.seconds 1) (changeDealingStatusTo Dealing newUpdatedCard)
+        [ A.wait (A.millis <| toFloat <| 25 * timelineID)
+        , A.event (A.millis 1100) (changeDealingStatusTo Dealing newUpdatedCard)
         , A.wait (A.millis 500)
         , A.event (A.seconds 1) (changeToResting newUpdatedCard)
         ]
         (A.init newUpdatedCard)
+
+
+thingyFunction timeLineOffset ( oldCard, newCard ) =
+    let
+        actualOldCard =
+            A.current oldCard
+
+        newCardToUse =
+            { newCard | timeLineID = actualOldCard.timeLineID, dealingStatus = OffScreen }
+    in
+    A.queue
+        [ A.event (A.seconds 1) (changeToDealing actualOldCard)
+        , A.event (A.seconds 1) (changeDealingStatusTo OffScreen actualOldCard)
+        , A.event A.immediately newCardToUse
+
+        --, A.wait (A.millis <| toFloat <| 15 * timeLineOffset)
+        , A.event (A.seconds 1) (changeToDealing newCardToUse)
+        , A.event (A.seconds 1) (changeToResting newCardToUse)
+        ]
+        oldCard
 
 
 handleNewGameCards : List GameCard -> Model -> ( Model, Cmd Msg )
@@ -290,23 +310,8 @@ handleNewGameCards serverCards model =
             ( { model | cards = updated_cards, gameStatus = Playing Audience }, Cmd.none )
 
         ATeamWon _ _ ->
-            let
-                thingyFunction ( oldCard, newCard ) =
-                    let
-                        actualOldCard =
-                            A.current oldCard
-
-                        newCardToUse =
-                            { newCard | timeLineID = actualOldCard.timeLineID, dealingStatus = Dealing }
-                    in
-                    A.queue
-                        [ A.event (A.seconds 1) (changeToDealing actualOldCard)
-                        , A.event (A.seconds 1) (changeToResting newCardToUse)
-                        ]
-                        oldCard
-            in
             ( { model
-                | cards = List.map thingyFunction (List.zip model.cards serverCards)
+                | cards = List.indexedMap thingyFunction (List.zip model.cards serverCards)
                 , gameStatus = Playing Audience
                 , redScoreBoard = A.go A.slowly Static model.redScoreBoard
                 , blueScoreBoard = A.go A.slowly Static model.blueScoreBoard
@@ -476,18 +481,21 @@ blueScoreBoardView cards blueTimeline =
     in
     div
         [ class "blue-sb sb"
-        , Animator.Inline.opacity blueTimeline <|
-            \state ->
-                case state of
-                    Static ->
-                        A.at (toFloat howManyUnTurneds / 7)
-
-                    Pulsing milliseconds ->
-                        A.loop (A.millis milliseconds) (A.wave 0 1)
         , style "right" "16px"
         , style "background-color" (Color.toCssString <| teamToColor Blue)
         ]
-        [ text <| String.fromInt howManyUnTurneds ]
+        [ span
+            [ Animator.Inline.opacity blueTimeline <|
+                \state ->
+                    case state of
+                        Static ->
+                            A.at 1
+
+                        Pulsing milliseconds ->
+                            A.loop (A.millis milliseconds) (A.wave 0 1)
+            ]
+            [ text <| String.fromInt howManyUnTurneds ]
+        ]
 
 
 redScoreBoardView cards redTimeline =
@@ -497,20 +505,21 @@ redScoreBoardView cards redTimeline =
     in
     div
         [ class "red-sb sb"
-        , Animator.Inline.opacity redTimeline <|
-            \state ->
-                case state of
-                    Static ->
-                        A.at (toFloat howManyUnTurneds / 7)
-
-                    Pulsing milliseconds ->
-                        A.loop (A.millis milliseconds) (A.wave 0 1)
-
-        --, style "opacity" "0.5"
         , style "left" "16px"
         , style "background-color" (Color.toCssString <| teamToColor Red)
         ]
-        [ text <| String.fromInt howManyUnTurneds ]
+        [ span
+            [ Animator.Inline.opacity redTimeline <|
+                \state ->
+                    case state of
+                        Static ->
+                            A.at 1
+
+                        Pulsing milliseconds ->
+                            A.loop (A.millis milliseconds) (A.wave 0 1)
+            ]
+            [ text <| String.fromInt howManyUnTurneds ]
+        ]
 
 
 type alias Window =
@@ -817,6 +826,9 @@ commonCardAttributes window cardIndex timelineCard =
 
         ( cardPlaceMiddleLeft, cardPlaceMiddleTop ) =
             calcCardMiddleLeftTop window cardWidth cardHeight
+
+        cardPlaceOffScreenTop =
+            -300
     in
     [ Html.Attributes.style "height" (px cardHeight)
     , Html.Attributes.style "width" (px cardWidth)
@@ -836,7 +848,7 @@ commonCardAttributes window cardIndex timelineCard =
                 \state ->
                     case state.dealingStatus of
                         OffScreen ->
-                            A.at -1000
+                            A.at cardPlaceOffScreenTop
 
                         Dealing ->
                             A.at cardPlaceMiddleTop
