@@ -796,6 +796,12 @@ commonCardAttributes window cardIndex timelineCard =
 
         ( cardTop, cardLeft ) =
             calcCardTopAndLeft window cardIndex ( cardHeight, cardWidth )
+
+        cardPlaceMiddleLeft =
+            764
+
+        cardPlaceMiddleTop =
+            276
     in
     [ Html.Attributes.style "height" (px cardHeight)
     , Html.Attributes.style "width" (px cardWidth)
@@ -821,7 +827,7 @@ commonCardAttributes window cardIndex timelineCard =
                             A.at 50
 
                         Dealing ->
-                            A.at 276
+                            A.at cardPlaceMiddleTop
 
                         Resting ->
                             A.at (toFloat cardTop)
@@ -838,7 +844,7 @@ commonCardAttributes window cardIndex timelineCard =
                             A.at 50
 
                         Dealing ->
-                            A.at 764
+                            A.at cardPlaceMiddleLeft
 
                         Resting ->
                             A.at (toFloat cardLeft)
