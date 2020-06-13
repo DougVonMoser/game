@@ -113,7 +113,6 @@ type alias GameCard =
 
 type DealingStatus
     = OffScreen
-    | Appearing
     | Dealing
     | Resting
 
@@ -738,10 +737,9 @@ calcCardTopAndLeft window count ( cardHeight, cardWidth ) =
     ( whatRowAmIIn * cardHeight + whatRowAmIIn * 8, whatColumnAmIIn * cardWidth + whatColumnAmIIn * 8 )
 
 
-calcCardHeightWidth : Window -> ( Int, Int )
-calcCardHeightWidth window =
+calcRowsColumns window =
     let
-        howManyPerRow =
+        rows =
             if window.width < 351 then
                 3
 
@@ -751,8 +749,17 @@ calcCardHeightWidth window =
             else
                 5
 
-        howManyColumns =
-            calcHowManyColumns howManyPerRow 20
+        columns =
+            calcHowManyColumns rows 20
+    in
+    ( rows, columns )
+
+
+calcCardHeightWidth : Window -> ( Int, Int )
+calcCardHeightWidth window =
+    let
+        ( howManyPerRow, howManyColumns ) =
+            calcRowsColumns window
     in
     ( calcCardHeight window.height howManyColumns
     , calcCardWidth window.width howManyPerRow
@@ -789,6 +796,17 @@ rotateDeg x =
     "rotate(" ++ String.fromFloat x ++ "deg)"
 
 
+calcCardMiddleLeftTop window cardWidth cardHeight =
+    let
+        left =
+            toFloat window.width / 2 - (toFloat cardWidth / 2)
+
+        top =
+            toFloat window.height / 2 - (toFloat cardHeight / 2)
+    in
+    ( left, top )
+
+
 commonCardAttributes window cardIndex timelineCard =
     let
         ( cardHeight, cardWidth ) =
@@ -797,11 +815,8 @@ commonCardAttributes window cardIndex timelineCard =
         ( cardTop, cardLeft ) =
             calcCardTopAndLeft window cardIndex ( cardHeight, cardWidth )
 
-        cardPlaceMiddleLeft =
-            764
-
-        cardPlaceMiddleTop =
-            276
+        ( cardPlaceMiddleLeft, cardPlaceMiddleTop ) =
+            calcCardMiddleLeftTop window cardWidth cardHeight
     in
     [ Html.Attributes.style "height" (px cardHeight)
     , Html.Attributes.style "width" (px cardWidth)
@@ -823,9 +838,6 @@ commonCardAttributes window cardIndex timelineCard =
                         OffScreen ->
                             A.at -1000
 
-                        Appearing ->
-                            A.at 50
-
                         Dealing ->
                             A.at cardPlaceMiddleTop
 
@@ -838,10 +850,7 @@ commonCardAttributes window cardIndex timelineCard =
                 \state ->
                     case state.dealingStatus of
                         OffScreen ->
-                            A.at 764
-
-                        Appearing ->
-                            A.at 50
+                            A.at cardPlaceMiddleLeft
 
                         Dealing ->
                             A.at cardPlaceMiddleLeft
