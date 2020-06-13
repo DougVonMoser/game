@@ -492,7 +492,7 @@ blueScoreBoardView cards blueTimeline =
                             A.at 1
 
                         Pulsing milliseconds ->
-                            A.loop (A.millis milliseconds) (A.wave 0 1)
+                            A.loop (A.millis milliseconds) (A.wave 0.25 1)
             ]
             [ text <| String.fromInt howManyUnTurneds ]
         ]
@@ -516,7 +516,7 @@ redScoreBoardView cards redTimeline =
                             A.at 1
 
                         Pulsing milliseconds ->
-                            A.loop (A.millis milliseconds) (A.wave 0 1)
+                            A.loop (A.millis milliseconds) (A.wave 0.25 1)
             ]
             [ text <| String.fromInt howManyUnTurneds ]
         ]
