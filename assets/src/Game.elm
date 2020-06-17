@@ -106,12 +106,12 @@ type alias GameCard =
     -- above are data we get from the server
     -- below are more for the presentation
     -- kinda weird that theyre grouped like this.. hmm..
-    , dealingStatus : DealingStatus
+    , positionStatus : PositionStatus
     , timeLineID : Int
     }
 
 
-type DealingStatus
+type PositionStatus
     = OffScreen
     | Dealing
     | Resting
@@ -252,27 +252,27 @@ type SBThing
 
 changeToResting : GameCard -> GameCard
 changeToResting card =
-    { card | dealingStatus = Resting }
+    { card | positionStatus = Resting }
 
 
-changeDealingStatusTo : DealingStatus -> GameCard -> GameCard
-changeDealingStatusTo newDS card =
-    { card | dealingStatus = newDS }
+changePositionStatusTo : PositionStatus -> GameCard -> GameCard
+changePositionStatusTo newDS card =
+    { card | positionStatus = newDS }
 
 
 changeToDealing card =
-    { card | dealingStatus = Dealing }
+    { card | positionStatus = Dealing }
 
 
 initFunction : Int -> GameCard -> A.Timeline GameCard
 initFunction timelineID card =
     let
         newUpdatedCard =
-            { card | timeLineID = timelineID, dealingStatus = OffScreen }
+            { card | timeLineID = timelineID, positionStatus = OffScreen }
     in
     A.queue
         [ A.wait (A.millis <| toFloat <| 25 * timelineID)
-        , A.event (A.millis 1100) (changeDealingStatusTo Dealing newUpdatedCard)
+        , A.event (A.millis 1100) (changePositionStatusTo Dealing newUpdatedCard)
         , A.wait (A.millis 500)
         , A.event (A.seconds 1) (changeToResting newUpdatedCard)
         ]
@@ -285,16 +285,13 @@ thingyFunction timeLineOffset ( oldCard, newCard ) =
             A.current oldCard
 
         newCardToUse =
-            { newCard | timeLineID = actualOldCard.timeLineID, dealingStatus = OffScreen }
+            { newCard | timeLineID = actualOldCard.timeLineID, positionStatus = OffScreen }
     in
     A.queue
-        [ A.event (A.seconds 1) (changeToDealing actualOldCard)
-        , A.event (A.seconds 1) (changeDealingStatusTo OffScreen actualOldCard)
-        , A.event A.immediately newCardToUse
-
-        --, A.wait (A.millis <| toFloat <| 15 * timeLineOffset)
+        [ A.event (A.seconds 1) (changePositionStatusTo Dealing actualOldCard)
+        , A.event (A.seconds 1) (changePositionStatusTo OffScreen actualOldCard)
         , A.event (A.seconds 1) (changeToDealing newCardToUse)
-        , A.event (A.seconds 1) (changeToResting newCardToUse)
+        , A.event A.immediately (changeToResting newCardToUse)
         ]
         oldCard
 
@@ -846,7 +843,7 @@ commonCardAttributes window cardIndex timelineCard =
         (pxF <|
             A.linear timelineCard <|
                 \state ->
-                    case state.dealingStatus of
+                    case state.positionStatus of
                         OffScreen ->
                             A.at cardPlaceOffScreenTop
 
@@ -860,7 +857,7 @@ commonCardAttributes window cardIndex timelineCard =
         (pxF <|
             A.linear timelineCard <|
                 \state ->
-                    case state.dealingStatus of
+                    case state.positionStatus of
                         OffScreen ->
                             A.at cardPlaceMiddleLeft
 
@@ -903,7 +900,7 @@ audienceCardView window count timelineCard =
             [ class "word"
             , Animator.Inline.textColor timelineCard <|
                 \state ->
-                    if state.dealingStatus /= Resting then
+                    if state.positionStatus /= Resting then
                         Color.rgb255 230 233 237
 
                     else if isUnTurned state then
