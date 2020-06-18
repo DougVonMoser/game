@@ -113,7 +113,7 @@ type alias GameCard =
 
 type PositionStatus
     = OffScreen
-    | Dealing
+    | Middle
     | Resting
 
 
@@ -260,8 +260,8 @@ changePositionStatusTo newDS card =
     { card | positionStatus = newDS }
 
 
-changeToDealing card =
-    { card | positionStatus = Dealing }
+changeToMiddle card =
+    { card | positionStatus = Middle }
 
 
 initFunction : Int -> GameCard -> A.Timeline GameCard
@@ -272,26 +272,31 @@ initFunction timelineID card =
     in
     A.queue
         [ A.wait (A.millis <| toFloat <| 25 * timelineID)
-        , A.event (A.millis 1100) (changePositionStatusTo Dealing newUpdatedCard)
+        , A.event (A.millis 1100) (changePositionStatusTo Middle newUpdatedCard)
         , A.wait (A.millis 500)
         , A.event (A.seconds 1) (changeToResting newUpdatedCard)
         ]
         (A.init newUpdatedCard)
 
 
-thingyFunction timeLineOffset ( oldCard, newCard ) =
+oldCardTransitionToNew _ ( oldCard, newCard ) =
     let
         actualOldCard =
             A.current oldCard
 
         newCardToUse =
-            { newCard | timeLineID = actualOldCard.timeLineID, positionStatus = OffScreen }
+            { newCard
+                | timeLineID = actualOldCard.timeLineID
+                , positionStatus = OffScreen
+            }
     in
     A.queue
-        [ A.event (A.seconds 1) (changePositionStatusTo Dealing actualOldCard)
-        , A.event (A.seconds 1) (changePositionStatusTo OffScreen actualOldCard)
-        , A.event (A.seconds 1) (changeToDealing newCardToUse)
-        , A.event A.immediately (changeToResting newCardToUse)
+        [ A.event (A.millis 1000) (changePositionStatusTo Middle actualOldCard)
+        , A.event (A.millis 1000) (changePositionStatusTo OffScreen actualOldCard)
+
+        --, A.event A.immediately newCardToUse
+        , A.event (A.millis 1000) (changePositionStatusTo Middle newCardToUse)
+        , A.event (A.millis 1000) (changePositionStatusTo Resting newCardToUse)
         ]
         oldCard
 
@@ -308,7 +313,7 @@ handleNewGameCards serverCards model =
 
         ATeamWon _ _ ->
             ( { model
-                | cards = List.indexedMap thingyFunction (List.zip model.cards serverCards)
+                | cards = List.indexedMap oldCardTransitionToNew (List.zip model.cards serverCards)
                 , gameStatus = Playing Audience
                 , redScoreBoard = A.go A.slowly Static model.redScoreBoard
                 , blueScoreBoard = A.go A.slowly Static model.blueScoreBoard
@@ -833,7 +838,7 @@ commonCardAttributes window cardIndex timelineCard =
         (rotateDeg <|
             A.move timelineCard <|
                 \state ->
-                    --if state.dealingStatus == Dealing then
+                    --if state.dealingStatus == Middle then
                     --if True then
                     --A.wrap 0 360 |> A.loop (A.millis 1000)
                     --else
@@ -847,7 +852,7 @@ commonCardAttributes window cardIndex timelineCard =
                         OffScreen ->
                             A.at cardPlaceOffScreenTop
 
-                        Dealing ->
+                        Middle ->
                             A.at cardPlaceMiddleTop
 
                         Resting ->
@@ -861,7 +866,7 @@ commonCardAttributes window cardIndex timelineCard =
                         OffScreen ->
                             A.at cardPlaceMiddleLeft
 
-                        Dealing ->
+                        Middle ->
                             A.at cardPlaceMiddleLeft
 
                         Resting ->
@@ -1025,7 +1030,7 @@ funky hash original_color word =
         word
         original_color
         (Hash hash)
-        Dealing
+        Middle
         420
 
 
