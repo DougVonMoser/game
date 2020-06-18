@@ -293,8 +293,7 @@ oldCardTransitionToNew _ ( oldCard, newCard ) =
     A.queue
         [ A.event (A.millis 1000) (changePositionStatusTo Middle actualOldCard)
         , A.event (A.millis 1000) (changePositionStatusTo OffScreen actualOldCard)
-
-        --, A.event A.immediately newCardToUse
+        , A.event A.immediately newCardToUse
         , A.event (A.millis 1000) (changePositionStatusTo Middle newCardToUse)
         , A.event (A.millis 1000) (changePositionStatusTo Resting newCardToUse)
         ]
