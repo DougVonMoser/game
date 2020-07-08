@@ -1,8 +1,7 @@
 module Game exposing (..)
 
 import Animator as A
-import Animator.Css
-import Animator.Inline
+import Animator.Css as ACss
 import Browser
 import Browser.Dom
 import Browser.Events exposing (Visibility(..))
@@ -485,8 +484,9 @@ blueScoreBoardView cards blueTimeline =
         , style "right" "16px"
         , style "background-color" (Color.toCssString <| teamToColor Blue)
         ]
-        [ span
-            [ Animator.Inline.opacity blueTimeline <|
+        [ ACss.node "span"
+            blueTimeline
+            [ ACss.opacity <|
                 \state ->
                     case state of
                         Static ->
@@ -495,6 +495,7 @@ blueScoreBoardView cards blueTimeline =
                         Pulsing milliseconds ->
                             A.loop (A.millis milliseconds) (A.wave 0.25 1)
             ]
+            []
             [ text <| String.fromInt howManyUnTurneds ]
         ]
 
@@ -509,8 +510,9 @@ redScoreBoardView cards redTimeline =
         , style "left" "16px"
         , style "background-color" (Color.toCssString <| teamToColor Red)
         ]
-        [ span
-            [ Animator.Inline.opacity redTimeline <|
+        [ ACss.node "span"
+            redTimeline
+            [ ACss.opacity <|
                 \state ->
                     case state of
                         Static ->
@@ -519,6 +521,7 @@ redScoreBoardView cards redTimeline =
                         Pulsing milliseconds ->
                             A.loop (A.millis milliseconds) (A.wave 0.25 1)
             ]
+            []
             [ text <| String.fromInt howManyUnTurneds ]
         ]
 
@@ -627,14 +630,6 @@ unTurnedCountOfTeam cards team =
         |> List.length
 
 
-type alias CardPosition =
-    { height : Int
-    , width : Int
-    , top : Int
-    , left : Int
-    }
-
-
 cardsView : Window -> List (A.Timeline GameCard) -> GameStatus -> Html Msg
 cardsView window cards gameStatus =
     div [ class "cards noselect" ] <|
@@ -656,6 +651,18 @@ cardsView window cards gameStatus =
 codeGiverCardView : Window -> Int -> A.Timeline GameCard -> Html Msg
 codeGiverCardView window count timelineCard =
     let
+        ( cardHeight, cardWidth ) =
+            calcCardHeightWidth window
+
+        ( cardTop, cardLeft ) =
+            calcCardTopAndLeft window count ( cardHeight, cardWidth )
+
+        ( cardPlaceMiddleLeft, cardPlaceMiddleTop ) =
+            calcCardMiddleLeftTop window cardWidth cardHeight
+
+        cardPlaceOffScreenTop =
+            -300
+
         currentCard =
             A.current timelineCard
 
@@ -666,23 +673,53 @@ codeGiverCardView window count timelineCard =
             else
                 " strikethrough"
     in
-    div
-        (commonCardAttributes window count timelineCard
-            ++ [ class "card "
-               , Animator.Inline.backgroundColor timelineCard <|
-                    \state ->
-                        teamToColor currentCard.originallyColored
-               ]
-        )
+    ACss.div timelineCard
+        [ ACss.backgroundColor <|
+            \state ->
+                teamToColor currentCard.originallyColored
+        , ACss.style "top"
+            pxF
+            (\state ->
+                case state.positionStatus of
+                    OffScreen ->
+                        A.at cardPlaceOffScreenTop
+
+                    Middle ->
+                        A.at cardPlaceMiddleTop
+
+                    Resting ->
+                        A.at (toFloat cardTop)
+            )
+        , ACss.style "left"
+            pxF
+            (\state ->
+                case state.positionStatus of
+                    OffScreen ->
+                        A.at cardPlaceMiddleLeft
+
+                    Middle ->
+                        A.at cardPlaceMiddleLeft
+
+                    Resting ->
+                        A.at (toFloat cardLeft)
+            )
+        , ACss.fontColor <|
+            \state ->
+                if state.positionStatus /= Resting then
+                    Color.rgb255 230 233 237
+
+                else if isUnTurned state then
+                    Color.black
+
+                else
+                    Color.white
+        ]
+        [ class "card "
+        , Html.Attributes.style "height" (px cardHeight)
+        , Html.Attributes.style "width" (px cardWidth)
+        ]
         [ span
             [ class <| "word" ++ strikeThroughClass
-            , Animator.Inline.textColor timelineCard <|
-                \state ->
-                    if isUnTurned state then
-                        Color.black
-
-                    else
-                        Color.white
             ]
             [ text currentCard.word ]
         ]
@@ -796,11 +833,6 @@ px x =
     String.fromInt x ++ "px"
 
 
-pxF : Float -> String
-pxF x =
-    String.fromFloat x ++ "px"
-
-
 rotateDeg : Float -> String
 rotateDeg x =
     "rotate(" ++ String.fromFloat x ++ "deg)"
@@ -817,101 +849,89 @@ calcCardMiddleLeftTop window cardWidth cardHeight =
     ( left, top )
 
 
-commonCardAttributes window cardIndex timelineCard =
+pxF : Float -> String
+pxF x =
+    String.fromFloat x ++ "px"
+
+
+audienceCardView : Window -> Int -> A.Timeline GameCard -> Html Msg
+audienceCardView window count timelineCard =
     let
         ( cardHeight, cardWidth ) =
             calcCardHeightWidth window
 
         ( cardTop, cardLeft ) =
-            calcCardTopAndLeft window cardIndex ( cardHeight, cardWidth )
+            calcCardTopAndLeft window count ( cardHeight, cardWidth )
 
         ( cardPlaceMiddleLeft, cardPlaceMiddleTop ) =
             calcCardMiddleLeftTop window cardWidth cardHeight
 
         cardPlaceOffScreenTop =
             -300
-    in
-    [ Html.Attributes.style "height" (px cardHeight)
-    , Html.Attributes.style "width" (px cardWidth)
-    , Html.Attributes.style "transform"
-        (rotateDeg <|
-            A.move timelineCard <|
-                \state ->
-                    --if state.dealingStatus == Middle then
-                    --if True then
-                    --A.wrap 0 360 |> A.loop (A.millis 1000)
-                    --else
-                    A.at 0
-        )
-    , Html.Attributes.style "top"
-        (pxF <|
-            A.linear timelineCard <|
-                \state ->
-                    case state.positionStatus of
-                        OffScreen ->
-                            A.at cardPlaceOffScreenTop
 
-                        Middle ->
-                            A.at cardPlaceMiddleTop
-
-                        Resting ->
-                            A.at (toFloat cardTop)
-        )
-    , Html.Attributes.style "left"
-        (pxF <|
-            A.linear timelineCard <|
-                \state ->
-                    case state.positionStatus of
-                        OffScreen ->
-                            A.at cardPlaceMiddleLeft
-
-                        Middle ->
-                            A.at cardPlaceMiddleLeft
-
-                        Resting ->
-                            A.at (toFloat cardLeft)
-        )
-    ]
-
-
-audienceCardView : Window -> Int -> A.Timeline GameCard -> Html Msg
-audienceCardView window count timelineCard =
-    let
         currentCard =
             A.current timelineCard
 
         buttonOrDiv =
             if A.current timelineCard |> ((==) UnTurned << .turnedStatus) then
-                button
+                "button"
 
             else
-                div
+                "div"
     in
-    buttonOrDiv
-        (commonCardAttributes window count timelineCard
-            ++ [ class "card "
-               , onClick <| UserClickedOnHash currentCard.hash
-               , Animator.Inline.backgroundColor timelineCard <|
-                    \state ->
-                        if isUnTurned state then
-                            Color.rgb255 230 233 237
+    ACss.node buttonOrDiv
+        timelineCard
+        [ ACss.style "top"
+            pxF
+            (\state ->
+                case state.positionStatus of
+                    OffScreen ->
+                        A.at cardPlaceOffScreenTop
 
-                        else
-                            teamToColor currentCard.originallyColored
-               ]
-        )
+                    Middle ->
+                        A.at cardPlaceMiddleTop
+
+                    Resting ->
+                        A.at (toFloat cardTop)
+            )
+        , ACss.style "left"
+            pxF
+            (\state ->
+                case state.positionStatus of
+                    OffScreen ->
+                        A.at cardPlaceMiddleLeft
+
+                    Middle ->
+                        A.at cardPlaceMiddleLeft
+
+                    Resting ->
+                        A.at (toFloat cardLeft)
+            )
+        , ACss.fontColor <|
+            \state ->
+                if state.positionStatus /= Resting then
+                    Color.rgb255 230 233 237
+
+                else if isUnTurned state then
+                    Color.black
+
+                else
+                    Color.white
+        , ACss.backgroundColor <|
+            \state ->
+                if isUnTurned state then
+                    Color.rgb255 230 233 237
+
+                else
+                    teamToColor currentCard.originallyColored
+        ]
+        [ class "card "
+        , onClick <| UserClickedOnHash currentCard.hash
+        , Html.Attributes.style "height" (px cardHeight)
+        , Html.Attributes.style "width" (px cardWidth)
+        ]
         [ span
             [ class "word"
-            , Animator.Inline.textColor timelineCard <|
-                \state ->
-                    if state.positionStatus /= Resting then
-                        Color.rgb255 230 233 237
-
-                    else if isUnTurned state then
-                        Color.black
-
-                    else
-                        Color.white
             ]
             [ text currentCard.word ]
         ]
@@ -927,11 +947,11 @@ audienceCardView window count timelineCard =
 animator : Model -> A.Animator Model
 animator model =
     List.foldl folder A.animator model.cards
-        |> A.watching .redScoreBoard
+        |> ACss.watching .redScoreBoard
             (\newSb model2 ->
                 { model2 | redScoreBoard = newSb }
             )
-        |> A.watching .blueScoreBoard
+        |> ACss.watching .blueScoreBoard
             (\newSb model2 ->
                 { model2 | blueScoreBoard = newSb }
             )
@@ -939,7 +959,7 @@ animator model =
 
 folder : A.Timeline GameCard -> A.Animator Model -> A.Animator Model
 folder gameCard y =
-    A.watching
+    ACss.watching
         (\model -> findTimelineGameCard model.cards gameCard)
         updateThatTimeline
         y
