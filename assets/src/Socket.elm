@@ -15,6 +15,30 @@ import Json.Encode as E
 port toSocket : E.Value -> Cmd msg
 
 
+elmSaysStartCardGame =
+    toSocket <|
+        E.object
+            [ ( "action"
+              , E.string "elmSaysStartCardGame"
+              )
+            ]
+
+
+elmSaysJoinExistingRoom roomTypings =
+    toSocket <|
+        E.object
+            [ ( "action", E.string "elmSaysJoinExistingRoom" )
+            , ( "room", E.string roomTypings )
+            ]
+
+
+elmSaysCreateNewRoom =
+    toSocket <|
+        E.object
+            [ ( "action", E.string "elmSaysCreateNewRoom" )
+            ]
+
+
 port joinLobby : E.Value -> Cmd msg
 
 

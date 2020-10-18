@@ -71,12 +71,7 @@ update msg model =
                     ( InGame room gameModel
                     , Cmd.batch
                         [ Cmd.map GotGameMsg gameCmd
-                        , Socket.toSocket <|
-                            E.object
-                                [ ( "action"
-                                  , E.string "elmSaysStartCardGame"
-                                  )
-                                ]
+                        , Socket.elmSaysStartCardGame
                         ]
                     )
 
@@ -91,13 +86,7 @@ update msg model =
         UserClickedJoinGame ->
             case model of
                 ChoosingHowToStartGame Nothing roomTypings ->
-                    ( ChoosingHowToStartGame Nothing roomTypings
-                    , Socket.toSocket <|
-                        E.object
-                            [ ( "action", E.string "elmSaysJoinExistingRoom" )
-                            , ( "room", E.string roomTypings )
-                            ]
-                    )
+                    ( ChoosingHowToStartGame Nothing roomTypings, Socket.elmSaysJoinExistingRoom roomTypings )
 
                 _ ->
                     ( model, Cmd.none )
@@ -106,10 +95,7 @@ update msg model =
             case model of
                 ChoosingHowToStartGame Nothing roomTypings ->
                     ( ChoosingHowToStartGame Nothing roomTypings
-                    , Socket.toSocket <|
-                        E.object
-                            [ ( "action", E.string "elmSaysCreateNewRoom" )
-                            ]
+                    , Socket.elmSaysCreateNewRoom
                     )
 
                 _ ->
