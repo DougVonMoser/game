@@ -1,13 +1,14 @@
+codenames board game knockoff
+[how to play the board game](https://archive.is/SMaox)
 
-run from assets
+![](game.gif)
+
+
 ```bash
-cd assets
-chokidar "./src/**/*.elm" -c "clear && printf '\e[3J' && elm make src/Main.elm --output=/dev/null" --initial
+cd assets 
+npm i 
+cd ..
+mix deps.get
+mix phx.server
 ```
 
-https://www.design-seeds.com/in-nature/creatures/flamingo-hues-2/
-
-
-elixirls language server crashy
-build separate repo for this version of elixir
-https://github.com/neoclide/coc.nvim/wiki/Using-the-configuration-file#configuration-file-resolve
